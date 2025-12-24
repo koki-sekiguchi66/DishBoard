@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'robots.txt', 'icons/*.png'],
       manifest: {
-        name: 'KiloGram - 栄養記録アプリ',
-        short_name: 'KiloGram',
+        name: 'DishBoard - 栄養記録アプリ',
+        short_name: 'DishBoard',
         theme_color: '#0d6efd',
         background_color: '#ffffff',
         display: 'standalone',

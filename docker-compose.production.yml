@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: kilogram-db-prod
+    container_name: dishboard-db-prod
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -17,7 +17,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: kilogram-redis-prod
+    container_name: dishboard-redis-prod
     restart: always
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -27,15 +27,15 @@ services:
 
   backend:
     build:
-      context: ./KiloGram
+      context: ./backend
       dockerfile: Dockerfile
       target: production
-    container_name: kilogram-backend-prod
+    container_name: dishboard-backend-prod
     volumes:
       - static_files:/app/staticfiles
       - media_files:/app/media
     environment:
-      - DJANGO_SETTINGS_MODULE=KiloGram.settings
+      - DJANGO_SETTINGS_MODULE=dishboard_project.settings
       - DJANGO_ENV=production
       - DEBUG=0
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
@@ -52,13 +52,13 @@ services:
 
   celery:
     build:
-      context: ./KiloGram
+      context: ./backend
       dockerfile: Dockerfile
       target: production
-    container_name: kilogram-celery-prod
-    command: celery -A KiloGram worker -l info --concurrency=2
+    container_name: dishboard-celery-prod
+    command: celery -A dishboard_project worker -l info --concurrency=2
     environment:
-      - DJANGO_SETTINGS_MODULE=KiloGram.settings
+      - DJANGO_SETTINGS_MODULE=dishboard_project.settings
       - DJANGO_ENV=production
       - DEBUG=0
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
@@ -72,13 +72,13 @@ services:
 
   celery-beat:
     build:
-      context: ./KiloGram
+      context: ./backend
       dockerfile: Dockerfile
       target: production
-    container_name: kilogram-celery-beat-prod
-    command: celery -A KiloGram beat -l info
+    container_name: dishboard-celery-beat-prod
+    command: celery -A dishboard_project beat -l info
     environment:
-      - DJANGO_SETTINGS_MODULE=KiloGram.settings
+      - DJANGO_SETTINGS_MODULE=dishboard_project.settings
       - DJANGO_ENV=production
       - DEBUG=0
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
@@ -92,12 +92,12 @@ services:
 
   frontend:
     build:
-      context: ./kilogram-app
+      context: ./frontend
       dockerfile: Dockerfile
       target: production
       args:
         VITE_API_URL: ${VITE_API_URL}
-    container_name: kilogram-frontend-prod
+    container_name: dishboard-frontend-prod
     ports:
       - "80:80"
     depends_on:

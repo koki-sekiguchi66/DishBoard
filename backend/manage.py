@@ -7,7 +7,7 @@ import sys
 def main():
     """Run administrative tasks."""
     # settings パッケージを使用
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'kilogram_project.settings')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dishboard_project.settings')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

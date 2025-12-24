@@ -1,5 +1,3 @@
-# KiloGram/KiloGram/settings/__init__.py
-
 import os
 
 # 環境変数から設定を選択

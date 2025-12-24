@@ -1,5 +1,3 @@
-# kilogram_project/settings/development.py
-
 import os
 import socket
 from pathlib import Path

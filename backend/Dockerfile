@@ -1,4 +1,4 @@
-# KiloGram/Dockerfile
+# backend/Dockerfile
 
 FROM python:3.12-slim AS base
 
@@ -54,4 +54,4 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["gunicorn", "KiloGram.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+CMD ["gunicorn", "dishboard_project.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]

@@ -1,11 +1,9 @@
-# kilogram_project/settings/base.py
-
 import os
 from pathlib import Path
 import dotenv
 from celery.schedules import crontab
 
-# .envファイルを読み込み（KiloGram/.env）
+# .envファイルを読み込み（backend/.env）
 dotenv.load_dotenv(os.path.join(Path(__file__).resolve().parent.parent.parent, '.env'))
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -54,7 +52,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'kilogram_project.urls'
+ROOT_URLCONF = 'dishboard_project.urls'
 
 TEMPLATES = [
     {
@@ -71,7 +69,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'kilogram_project.wsgi.application'
+WSGI_APPLICATION = 'dishboard_project.wsgi.application'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
