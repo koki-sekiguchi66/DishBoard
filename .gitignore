@@ -5,6 +5,9 @@
 *.log
 *.swp
 
+#secret files
+cloudfront-config.json
+
 # Environment variables
 .env
 .env.*

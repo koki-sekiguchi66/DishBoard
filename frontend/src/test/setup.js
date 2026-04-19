@@ -27,3 +27,11 @@ Object.defineProperty(window, 'localStorage', {
 // axios.jsの401エラーハンドラーがwindow.location.hrefを使用するため
 delete window.location;
 window.location = { href: '', reload: vi.fn() };
+
+// --- ResizeObserver のモック ---
+// Recharts 等のチャートライブラリが jsdom 環境で要求するため
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};

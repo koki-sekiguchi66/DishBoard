@@ -111,4 +111,13 @@ services:
     networks:
       - dishboard_network
 
+volumes:
+  postgres_data:
+  static_files:
+  media_files:
+
+networks:
+  dishboard_network:
+    driver: bridge
+
   

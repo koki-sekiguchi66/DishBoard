@@ -1,0 +1,108 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* 将来のダークモードトグル用 */
+@custom-variant dark (&:is(.dark *));
+
+/* カラー定義 */
+
+:root {
+  /* ── Surface Colors ── */
+  --background: oklch(0.145 0.005 286);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.185 0.005 286);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.185 0.005 286);
+  --popover-foreground: oklch(0.985 0 0);
+
+  /* ── Brand Colors ── */
+  --primary: oklch(0.607 0.213 16.57);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.21 0.006 286);
+  --secondary-foreground: oklch(0.985 0 0);
+  --accent: oklch(0.274 0.006 286);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.577 0.245 27.32);
+  --destructive-foreground: oklch(1 0 0);
+
+  /* ── Muted / Borders ── */
+  --muted: oklch(0.21 0.006 286);
+  --muted-foreground: oklch(0.556 0.014 286);
+  --border: oklch(0.274 0.006 286);
+  --input: oklch(0.274 0.006 286);
+  --ring: oklch(0.607 0.213 16.57);
+
+  /* ── Radius ── */
+  --radius: 0.625rem;
+
+  /* ── PFC (栄養素) 専用カラー ── */
+  --color-protein: oklch(0.707 0.165 254.62);
+  --color-fat: oklch(0.795 0.184 86.05);
+  --color-carbs: oklch(0.723 0.191 149.58);
+  --color-calories: oklch(0.607 0.213 16.57);
+
+  /* ── 食事タイミング別カラー ── */
+  --color-breakfast: oklch(0.78 0.155 55);
+  --color-lunch: oklch(0.71 0.15 230);
+  --color-dinner: oklch(0.65 0.17 293);
+  --color-snack: oklch(0.77 0.2 131);
+}
+
+/* Tailwind テーマ　*/
+
+@theme inline {
+  /* Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Nutrition Colors */
+  --color-protein: var(--color-protein);
+  --color-fat: var(--color-fat);
+  --color-carbs: var(--color-carbs);
+  --color-calories: var(--color-calories);
+
+  /* Meal Timing Colors */
+  --color-breakfast: var(--color-breakfast);
+  --color-lunch: var(--color-lunch);
+  --color-dinner: var(--color-dinner);
+  --color-snack: var(--color-snack);
+
+  /* Border Radius */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Font Family */
+  --font-sans: "Noto Sans JP", system-ui, sans-serif;
+}
+
+/* Tailwind新UIコンポーネント用スタイル
+ * Bootstrap のグローバルスタイルとの競合を避けるため、
+ * Tailwind の新UIは .dishboard-app クラス配下でのみ適用。
+  */
+
+.dishboard-app {
+  font-family: var(--font-sans);
+  background-color: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

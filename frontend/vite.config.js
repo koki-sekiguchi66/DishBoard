@@ -1,29 +1,31 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
+// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'robots.txt', 'icons/*.png'],
+      registerType: 'prompt',
+      includeAssets: ['vite.svg'],
       manifest: {
-        name: 'KiloGram - 栄養記録アプリ',
-        short_name: 'KiloGram',
-        theme_color: '#0d6efd',
-        background_color: '#ffffff',
+        name: 'DishBoard - 健康記録アプリ',
+        short_name: 'DishBoard',
+        description: '食事と体重を記録して健康管理',
+        theme_color: '#f43f5e',
+        background_color: '#18181b',
         display: 'standalone',
-        orientation: 'portrait-primary',
         scope: '/',
         start_url: '/',
         icons: [
           {
             src: '/icons/icon-192x192.png',
             sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any maskable'
+            type: 'image/png'
           },
           {
             src: '/icons/icon-512x512.png',
@@ -36,28 +38,15 @@ export default defineConfig({
       workbox: {
         runtimeCaching: [
           {
-            urlPattern: /^https?:\/\/.*\/api\/.*/i,
+            urlPattern: /\/api\/.*/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
               expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'image-cache',
-              expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 30
-              }
+                maxAgeSeconds: 60 * 60 * 24
+              },
+              networkTimeoutSeconds: 5
             }
           },
           {
@@ -112,37 +101,25 @@ export default defineConfig({
       },
     },
   },
-  // ============================================
-  // テスト設定（Vitest）
-  // ============================================
+  
+
+  // テスト設定
+
   test: {
-    // テスト関数(describe, it, expect)をimportなしで使用可能にする
     globals: true,
-
-    // ブラウザDOM環境をjsdomでエミュレート
-    // これによりdocument, window, localStorageが利用可能になる
     environment: 'jsdom',
-
-    // 全テスト前に実行されるセットアップファイル
-    // jest-domマッチャー登録 + localStorageモック + cleanup
     setupFiles: './src/test/setup.js',
-
-    // CSSのインポートをテスト時に無視（パースエラー防止）
     css: false,
-
-    // テストファイルの検索パターン
-    include: ['src/**/*.{test,spec}.{js,jsx}'],
-
-    // カバレッジ設定
+    include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
-      include: ['src/**/*.{js,jsx}'],
+      include: ['src/**/*.{js,jsx,ts,tsx}'],
       exclude: [
         'src/main.jsx',
         'src/test/**',
         'src/**/__tests__/**',
-        'src/**/*.test.{js,jsx}',
+        'src/**/*.test.{js,jsx,ts,tsx}',
       ],
       thresholds: {
         global: {
