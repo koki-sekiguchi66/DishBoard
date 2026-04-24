@@ -1,20 +1,19 @@
 /**
  * Dashboard — DishBoard メイン画面（Phase 1.5 + 2 統合版）
  *
- * Phase 1 → 1.5+2 の変更点:
- *   - AppShell が内部で BottomNav → Sidebar に変更済み（Dashboard側の変更は props のみ）
- *   - CalorieChart / WeightChart を記録タブから削除し、AnalysisPage に移動
- *   - analysisContent を AppShell に渡して分析ページを有効化
- *   - cafeteria 関連の props を削除（学食タブ廃止）
- *
  * アーキテクチャ:
  *   Dashboard は「統合レイヤー」として機能する。
- *   - useDashboardData フック: データ取得（変更なし）
- *   - RecordTab: 記録ページの表示（変更なし）
- *   - AnalysisPage: 分析ページの表示（新規追加）
- *   - AppShell: レイアウト + ページルーティング（Sidebar 方式に更新済み）
+ *   - useDashboardData フック: データ取得（Fix #3 で stale closure 修正済み）
+ *   - RecordTab: 記録ページの表示
+ *   - AnalysisPage: 分析ページの表示
+ *   - AppShell: レイアウト + ページルーティング（Sidebar 方式）
+ *
+ * Fix #10: useMemo でフォームスロットをメモ化
+ *   mealFormSlot / weightFormSlot は actions のコールバック参照が変わらない限り
+ *   同一のJSXを返す。毎レンダーで再生成すると子コンポーネント（MealForm, WeightForm）が
+ *   不要に再マウントされるため、useMemo で安定化させる。
  */
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card } from 'react-bootstrap';
 
 import { MealForm, EditMealModal } from '@/features/meals';
@@ -29,26 +28,23 @@ const Dashboard = ({ handleLogout }) => {
   const [editingMeal, setEditingMeal] = useState(null);
   const initialDate = new Date().toISOString().split('T')[0];
 
-  // カスタムフックを使用（変更なし）
   const { data, actions } = useDashboardData(initialDate);
   const { meals, allMeals, weights, dailySummary, selectedDate } = data;
 
-  // Meal 更新時のラッパー
   const onMealUpdateWrapper = (updatedMeal) => {
     actions.handleMealUpdated(updatedMeal);
     setEditingMeal(null);
   };
 
-  // 削除確認ラッパー
   const confirmDelete = (mealId) => {
     if (window.confirm('この記録を本当に削除しますか？')) {
       actions.handleMealDelete(mealId);
     }
   };
 
-  // ── 既存 Bootstrap コンポーネントをスロットとして準備（変更なし） ──
-
-  const mealFormSlot = (
+  // ── Fix #10: フォームスロットをメモ化 ──
+  // actions.handleMealCreated / handleWeightCreated は useCallback で安定化済み（Fix #3）
+  const mealFormSlot = useMemo(() => (
     <Card className="shadow-sm">
       <Card.Header className="bg-success text-white">
         <Card.Title className="mb-0">
@@ -60,9 +56,9 @@ const Dashboard = ({ handleLogout }) => {
         <MealForm onMealCreated={actions.handleMealCreated} />
       </Card.Body>
     </Card>
-  );
+  ), [actions.handleMealCreated]);
 
-  const weightFormSlot = (
+  const weightFormSlot = useMemo(() => (
     <Card className="shadow-sm">
       <Card.Header className="bg-info text-white">
         <Card.Title className="mb-0">
@@ -74,9 +70,9 @@ const Dashboard = ({ handleLogout }) => {
         <WeightForm onWeightCreated={actions.handleWeightCreated} />
       </Card.Body>
     </Card>
-  );
+  ), [actions.handleWeightCreated]);
 
-  // ── 記録ページ ──
+  // ── ページコンテンツ ──
 
   const recordContent = (
     <RecordTab
@@ -90,8 +86,6 @@ const Dashboard = ({ handleLogout }) => {
       weightFormSlot={weightFormSlot}
     />
   );
-
-  // ── 分析ページ（Phase 2 新規追加） ──
 
   const analysisContent = (
     <AnalysisPage

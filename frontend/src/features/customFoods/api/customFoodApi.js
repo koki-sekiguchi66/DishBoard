@@ -1,26 +1,32 @@
 import { apiClient } from '@/lib/axios';
 
+/**
+ * カスタム食品（Myアイテム）API
+ *
+ * バックエンドは CustomFoodViewSet（ModelViewSet）で CRUD を一元管理。
+ * エンドポイント: /api/foods/custom/
+ *
+ * 変更: deleteCustomFood のパスを ViewSet 標準の DELETE /<id>/ に統一
+ *       （旧: /<id>/delete/ は関数ベースView向けで削除済み）
+ */
 export const customFoodApi = {
   getCustomFoods: async () => {
-    // 既にmealApiにも同様の処理があるが、専用APIとして保持する場合
     const response = await apiClient.get('/foods/custom/');
     return response.data;
   },
 
   createCustomFood: async (data) => {
-    // POST /foods/custom/
     const response = await apiClient.post('/foods/custom/', data);
     return response.data;
   },
 
   updateCustomFood: async (id, data) => {
-    // PUT /foods/custom/<id>/
     const response = await apiClient.put(`/foods/custom/${id}/`, data);
     return response.data;
   },
 
   deleteCustomFood: async (id) => {
-    // DELETE /foods/custom/<id>/delete/ (urls.pyの設定に基づく)
-    await apiClient.delete(`/foods/custom/${id}/delete/`);
-  }
+    // ViewSet 標準の destroy アクション（DELETE /foods/custom/<id>/）
+    await apiClient.delete(`/foods/custom/${id}/`);
+  },
 };

@@ -105,8 +105,8 @@ class MealRecordSerializer(serializers.ModelSerializer):
         return instance
 
 class MealRecordListSerializer(serializers.ModelSerializer):
-    items_count = serializers.SerializerMethodField()
-    
+    items_count = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = MealRecord
         fields = [
@@ -114,9 +114,6 @@ class MealRecordListSerializer(serializers.ModelSerializer):
             'calories', 'protein', 'fat', 'carbohydrates',
             'items_count', 'created_at',
         ]
-    
-    def get_items_count(self, obj):
-        return obj.items.count()
 
 
 class CustomMenuItemSerializer(serializers.ModelSerializer):

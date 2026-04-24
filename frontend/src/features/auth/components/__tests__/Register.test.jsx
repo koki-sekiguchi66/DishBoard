@@ -50,7 +50,7 @@ describe('Register コンポーネント', () => {
     expect(apiClient.post).not.toHaveBeenCalled();
   });
 
-  it('登録成功時に自動ログインされコールバックする', async () => {
+  it('登録成功時に自動ログインされコールバックする（トークン保存はApp.jsx管理）', async () => {
     const user = userEvent.setup();
 
     apiClient.post
@@ -66,7 +66,7 @@ describe('Register コンポーネント', () => {
     await user.click(screen.getByRole('button', { name: /アカウントを作成/i }));
 
     await waitFor(() => {
-      expect(localStorage.setItem).toHaveBeenCalledWith('token', 'new-token-xyz');
+      // Fix #9: localStorage.setItem はこのコンポーネントでは呼ばない
       expect(mockOnRegisterSuccess).toHaveBeenCalledWith('new-token-xyz');
     });
   });

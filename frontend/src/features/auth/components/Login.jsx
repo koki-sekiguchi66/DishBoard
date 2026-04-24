@@ -1,4 +1,18 @@
-// kilogram-app/src/features/auth/components/Login.jsx
+/**
+ * Login — ログインフォーム
+ *
+ * Fix #9: トークン永続化の責務を App.jsx に一元化
+ *
+ * 修正前:
+ *   handleSubmit 内で localStorage.setItem('token', ...) を実行した後、
+ *   onLoginSuccess(token) を呼んでいた。しかし App.jsx の handleLoginSuccess も
+ *   同じ localStorage.setItem を実行しており、責務が重複していた。
+ *
+ * 修正後:
+ *   Login は「認証APIの呼び出し → 成功時にトークンを親に通知」のみ担当。
+ *   localStorage への保存は App.jsx が一括管理する。
+ *   これにより、将来的にトークン保存先を変更する場合も App.jsx だけ修正すれば済む。
+ */
 import { useState } from 'react';
 import { Form, Button, Alert, Spinner } from 'react-bootstrap';
 import { apiClient } from '@/lib/axios';
@@ -27,7 +41,7 @@ const Login = ({ onLoginSuccess }) => {
       const response = await apiClient.post('/login/', formData);
 
       if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+        // トークンの永続化は App.jsx（handleLoginSuccess）に委譲
         setMessage('ログインに成功しました！');
         onLoginSuccess(response.data.token);
       }

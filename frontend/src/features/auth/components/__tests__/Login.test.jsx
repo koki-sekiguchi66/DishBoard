@@ -31,7 +31,7 @@ describe('Login コンポーネント', () => {
     expect(screen.getByPlaceholderText('パスワードを入力')).toBeInTheDocument();
   });
 
-  it('ログイン成功時にトークンが保存されコールバックする', async () => {
+  it('ログイン成功時にコールバックが呼ばれる（トークン保存はApp.jsx管理）', async () => {
     const user = userEvent.setup();
     apiClient.post.mockResolvedValue({ data: { token: 'new-token-abc' } });
 
@@ -46,7 +46,8 @@ describe('Login コンポーネント', () => {
         username: 'testuser',
         password: 'password123',
       });
-      expect(localStorage.setItem).toHaveBeenCalledWith('token', 'new-token-abc');
+      // Fix #9: localStorage.setItem はこのコンポーネントでは呼ばない
+      // トークン永続化は App.jsx の handleLoginSuccess が担当
       expect(mockOnLoginSuccess).toHaveBeenCalledWith('new-token-abc');
     });
   });

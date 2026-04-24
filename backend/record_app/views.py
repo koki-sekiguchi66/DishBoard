@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 from datetime import date
 
+from django.db.models import Count
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets, generics, permissions
@@ -165,9 +166,16 @@ class MealRecordViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        return MealRecord.objects.filter(
-            user=self.request.user
-        ).prefetch_related('items').order_by('-record_date', '-created_at')
+        qs = MealRecord.objects.filter(user=self.request.user)
+
+        if self.action == 'list':
+            # list では items の中身は不要。件数だけ annotation で取得し N+1 を回避
+            qs = qs.annotate(items_count=Count('items'))
+        else:
+            # detail / update / delete では items の中身が必要
+            qs = qs.prefetch_related('items')
+
+        return qs.order_by('-record_date', '-created_at')
     
     def get_serializer_class(self):
         if self.action == 'list':

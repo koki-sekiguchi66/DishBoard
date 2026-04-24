@@ -1,3 +1,11 @@
+/**
+ * Register — ユーザー登録フォーム
+ *
+ * Fix #9: トークン永続化の責務を App.jsx に一元化
+ *
+ * Login.jsx と同様、登録成功後の自動ログインで取得したトークンを
+ * onRegisterSuccess 経由で親に渡すのみ。localStorage への保存は行わない。
+ */
 import { useState } from 'react';
 import { Form, Button, Alert, Spinner } from 'react-bootstrap';
 import { apiClient } from '@/lib/axios';
@@ -43,13 +51,14 @@ const Register = ({ onRegisterSuccess }) => {
         confirm_password: formData.confirm_password,
       });
 
+      // 登録成功後に自動ログイン
       const loginResponse = await apiClient.post('/login/', {
         username: formData.username,
         password: formData.password,
       });
 
       if (loginResponse.data.token) {
-        localStorage.setItem('token', loginResponse.data.token);
+        // トークンの永続化は App.jsx（handleRegisterSuccess）に委譲
         onRegisterSuccess(loginResponse.data.token);
       }
     } catch (error) {
@@ -119,11 +128,8 @@ const Register = ({ onRegisterSuccess }) => {
             required
             placeholder="パスワードを入力"
             autoComplete="new-password"
-            minLength={8}
           />
-          <Form.Text className="text-muted">
-            8文字以上で入力してください
-          </Form.Text>
+          <Form.Text className="text-muted">8文字以上</Form.Text>
         </Form.Group>
 
         <Form.Group className="mb-4">
@@ -136,14 +142,13 @@ const Register = ({ onRegisterSuccess }) => {
             required
             placeholder="パスワードを再入力"
             autoComplete="new-password"
-            minLength={8}
           />
         </Form.Group>
 
         <div className="d-grid">
           <Button 
             type="submit" 
-            variant="primary"
+            variant="success"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -159,7 +164,7 @@ const Register = ({ onRegisterSuccess }) => {
               </>
             ) : (
               <>
-                <i className="bi bi-check-circle me-2"></i>
+                <i className="bi bi-person-plus me-2"></i>
                 アカウントを作成
               </>
             )}

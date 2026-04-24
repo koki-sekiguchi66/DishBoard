@@ -143,6 +143,12 @@ class WeightRecord(models.Model):
             models.Index(fields=['user', '-record_date'], name='weight_user_date_desc_idx'),
         ]
         ordering = ['-record_date']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'record_date'],
+                name='unique_weight_per_user_per_day',
+            ),
+        ]
 
 
 class StandardFood(models.Model):

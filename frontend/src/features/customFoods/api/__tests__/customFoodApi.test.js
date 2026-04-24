@@ -54,12 +54,13 @@ describe('customFoodApi', () => {
   });
 
   describe('deleteCustomFood', () => {
-    it('指定IDのカスタム食品を削除', async () => {
+    it('指定IDのMyアイテムを削除（ViewSet標準DELETEエンドポイント）', async () => {
       apiClient.delete.mockResolvedValue({});
 
       await customFoodApi.deleteCustomFood(5);
 
-      expect(apiClient.delete).toHaveBeenCalledWith('/foods/custom/5/delete/');
+      // 旧: /foods/custom/5/delete/ → 新: /foods/custom/5/ (ViewSet.destroy)
+      expect(apiClient.delete).toHaveBeenCalledWith('/foods/custom/5/');
     });
   });
 

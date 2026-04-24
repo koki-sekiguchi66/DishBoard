@@ -1,10 +1,21 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { mealApi } from '@/features/meals/api/mealApi';
 import { weightApi } from '@/features/weights/api/weightApi';
 
 /**
  * ダッシュボードに必要なデータを管理するカスタムフック
- * APIコールと状態管理を分離し、コンポーネントをクリーンに保つ
+ *
+ * 設計判断:
+ *   - allMeals を useRef で保持し、useEffect 内の stale closure を回避
+ *   - 初回ロード（fetchAll）と日付変更（updateForDate）を明確に分離
+ *   - 重複していた weights の取得を初回ロードに一本化
+ *   - filterMealsByDate のソートを created_at に修正
+ *     （同一日付の record_date でソートしても順序が決まらなかった）
+ *
+ * データフロー:
+ *   マウント → fetchAll（meals + weights + summary を並列取得）
+ *   日付変更 → updateForDate（summary 再取得 + allMeals から日付フィルタ）
+ *   CRUD操作 → handler が allMeals state + ref を同期更新 → summary 再取得
  */
 export const useDashboardData = (initialDate) => {
   const [meals, setMeals] = useState([]);
@@ -15,141 +26,148 @@ export const useDashboardData = (initialDate) => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // 指定された日付で食事リストをフィルタリング
-  const filterMealsByDate = useCallback((mealList, date) => {
-    const filteredMeals = mealList.filter(meal => meal.record_date === date);
-    setMeals(filteredMeals.sort((a, b) => new Date(b.record_date) - new Date(a.record_date)));
+  // stale closure 対策: allMeals の最新値を常に参照可能にする
+  const allMealsRef = useRef([]);
+  const isInitialLoadDone = useRef(false);
+
+  /**
+   * allMeals の state と ref を同期更新するヘルパー
+   * handler 内で allMeals を直接参照すると stale になるため、
+   * ref 経由で最新値を取得し、state 更新と同時に ref も更新する
+   */
+  const updateAllMeals = useCallback((updater) => {
+    const current = allMealsRef.current;
+    const next = typeof updater === 'function' ? updater(current) : updater;
+    allMealsRef.current = next;
+    setAllMeals(next);
+    return next;
   }, []);
 
-  // データ取得
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [mealsData, weightsData, summaryData] = await Promise.all([
-        mealApi.getMeals(),
-        weightApi.getWeights(),
-        mealApi.getDailySummary(selectedDate)
-      ]);
+  // 指定された日付で食事リストをフィルタリング
+  const filterMealsByDate = useCallback((mealList, date) => {
+    const filtered = mealList.filter(meal => meal.record_date === date);
+    // 同一日付内では created_at の降順でソート（record_date ソートは無意味だった）
+    setMeals(filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+  }, []);
 
-      setAllMeals(mealsData);
-      filterMealsByDate(mealsData, selectedDate);
-      setWeights(weightsData);
-      setDailySummary(summaryData.nutrition_summary);
-    } catch (error) {
-      console.error('Failed to fetch dashboard data', error);
-      setMessage('データの取得に失敗しました。');
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedDate, filterMealsByDate]);
-
-  // 日付変更時に日次サマリーだけ更新し、リストは既存データからフィルタ
+  // ── 初回ロード（マウント時に1回だけ実行） ──
   useEffect(() => {
-    const updateDateView = async () => {
+    const fetchAll = async () => {
+      setLoading(true);
+      try {
+        const [mealsData, weightsData, summaryData] = await Promise.all([
+          mealApi.getMeals(),
+          weightApi.getWeights(),
+          mealApi.getDailySummary(initialDate),
+        ]);
+
+        allMealsRef.current = mealsData;
+        setAllMeals(mealsData);
+        filterMealsByDate(mealsData, initialDate);
+        setWeights(weightsData);
+        setDailySummary(summaryData.nutrition_summary);
+      } catch (error) {
+        console.error('Failed to fetch dashboard data', error);
+        setMessage('データの取得に失敗しました。');
+      } finally {
+        setLoading(false);
+        isInitialLoadDone.current = true;
+      }
+    };
+
+    fetchAll();
+    // initialDate は初期値として1回だけ使用。filterMealsByDate は安定参照。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── 日付変更時の処理（初回ロード完了後のみ） ──
+  useEffect(() => {
+    if (!isInitialLoadDone.current) return;
+
+    const updateForDate = async () => {
       try {
         const summaryData = await mealApi.getDailySummary(selectedDate);
         setDailySummary(summaryData.nutrition_summary);
-        // allMealsが既にロードされていればそこからフィルタ
-        if (allMeals.length > 0) {
-            filterMealsByDate(allMeals, selectedDate);
-        } else {
-            // 初回ロードなどの場合
-            const mealsData = await mealApi.getMeals();
-            setAllMeals(mealsData);
-            filterMealsByDate(mealsData, selectedDate);
-        }
+        filterMealsByDate(allMealsRef.current, selectedDate);
       } catch (error) {
         console.error('Failed to update daily view', error);
       }
     };
-    
-    // データ未取得なら全取得、取得済みなら日付変更対応
-    if (allMeals.length === 0) {
-        fetchData();
-    } else {
-        updateDateView();
-    }
-  }, [selectedDate, fetchData]); // allMealsを依存に入れるとループする恐れがあるため注意
 
-  // 初回ロード（weightsなどは日付変更の影響を受けないため分離してもよいが簡略化）
-  useEffect(() => {
-    const loadWeights = async () => {
-        try {
-            const data = await weightApi.getWeights();
-            setWeights(data);
-        } catch(e) { console.error(e) }
-    };
-    loadWeights();
-  }, []);
-
+    updateForDate();
+  }, [selectedDate, filterMealsByDate]);
 
   // --- アクションハンドラ ---
 
-  const handleDateChange = (newDate) => {
+  const handleDateChange = useCallback((newDate) => {
     setSelectedDate(newDate);
-  };
+  }, []);
 
-  const showMessage = (msg, type = 'success') => {
+  const showMessage = useCallback((msg) => {
     setMessage(msg);
     setTimeout(() => setMessage(''), 5000);
-  };
+  }, []);
 
-  const handleMealCreated = (newMeal) => {
-    const updatedAllMeals = [newMeal, ...allMeals].sort((a, b) => new Date(b.record_date) - new Date(a.record_date));
-    setAllMeals(updatedAllMeals);
-    
+  /** サマリーを再取得（複数ハンドラから共通利用） */
+  const refreshSummary = useCallback((date) => {
+    mealApi.getDailySummary(date)
+      .then(data => setDailySummary(data.nutrition_summary))
+      .catch(err => console.error('Failed to refresh summary', err));
+  }, []);
+
+  const handleMealCreated = useCallback((newMeal) => {
+    const updated = updateAllMeals((prev) =>
+      [newMeal, ...prev].sort((a, b) => new Date(b.record_date) - new Date(a.record_date))
+    );
+
     if (newMeal.record_date === selectedDate) {
-      filterMealsByDate(updatedAllMeals, selectedDate);
-      // サマリー再取得
-      mealApi.getDailySummary(selectedDate).then(data => setDailySummary(data.nutrition_summary));
+      filterMealsByDate(updated, selectedDate);
+      refreshSummary(selectedDate);
     }
-  };
+  }, [selectedDate, updateAllMeals, filterMealsByDate, refreshSummary]);
 
-  const handleMealDelete = async (mealId) => {
+  const handleMealDelete = useCallback(async (mealId) => {
     try {
       await mealApi.deleteMeal(mealId);
-      const updatedAllMeals = allMeals.filter(meal => meal.id !== mealId);
-      setAllMeals(updatedAllMeals);
-      filterMealsByDate(updatedAllMeals, selectedDate);
-      // サマリー再取得
-      mealApi.getDailySummary(selectedDate).then(data => setDailySummary(data.nutrition_summary));
+      const updated = updateAllMeals((prev) => prev.filter(meal => meal.id !== mealId));
+      filterMealsByDate(updated, selectedDate);
+      refreshSummary(selectedDate);
       showMessage('記録を削除しました。');
     } catch (error) {
       console.error('Failed to delete meal', error);
-      showMessage('記録の削除に失敗しました。', 'error');
+      showMessage('記録の削除に失敗しました。');
     }
-  };
+  }, [selectedDate, updateAllMeals, filterMealsByDate, refreshSummary, showMessage]);
 
-  const handleMealUpdated = (updatedMeal) => {
-    const updatedAllMeals = allMeals.map(meal => (meal.id === updatedMeal.id ? updatedMeal : meal));
-    setAllMeals(updatedAllMeals);
-    filterMealsByDate(updatedAllMeals, selectedDate);
-    // サマリー再取得
-    mealApi.getDailySummary(selectedDate).then(data => setDailySummary(data.nutrition_summary));
-  };
+  const handleMealUpdated = useCallback((updatedMeal) => {
+    const updated = updateAllMeals((prev) =>
+      prev.map(meal => (meal.id === updatedMeal.id ? updatedMeal : meal))
+    );
+    filterMealsByDate(updated, selectedDate);
+    refreshSummary(selectedDate);
+  }, [selectedDate, updateAllMeals, filterMealsByDate, refreshSummary]);
 
-  const handleWeightCreated = (newWeight) => {
+  const handleWeightCreated = useCallback((newWeight) => {
     setWeights(prevWeights => {
       const existingIndex = prevWeights.findIndex(w => w.id === newWeight.id);
       if (existingIndex !== -1) {
-        const updatedWeights = [...prevWeights];
-        updatedWeights[existingIndex] = newWeight;
-        return updatedWeights.sort((a, b) => new Date(b.record_date) - new Date(a.record_date));
-      } else {
-        return [newWeight, ...prevWeights].sort((a, b) => new Date(b.record_date) - new Date(a.record_date));
+        const copy = [...prevWeights];
+        copy[existingIndex] = newWeight;
+        return copy.sort((a, b) => new Date(b.record_date) - new Date(a.record_date));
       }
+      return [newWeight, ...prevWeights].sort((a, b) => new Date(b.record_date) - new Date(a.record_date));
     });
-  };
+  }, []);
 
   return {
     data: { meals, allMeals, weights, dailySummary, selectedDate, message, loading },
-    actions: { 
-      handleDateChange, 
-      handleMealCreated, 
-      handleMealDelete, 
-      handleMealUpdated, 
+    actions: {
+      handleDateChange,
+      handleMealCreated,
+      handleMealDelete,
+      handleMealUpdated,
       handleWeightCreated,
-      setMessage 
-    }
+      setMessage,
+    },
   };
 };
