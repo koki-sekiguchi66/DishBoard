@@ -1,16 +1,16 @@
 /**
- * Dashboard — DishBoard メイン画面（Phase 3 TypeScript + Tailwind版）
+ * Dashboard — DishBoard メイン画面（Phase 4 更新版）
  *
- * Phase 3 変更点:
- *   - JSX → TSX（型安全化）
- *   - Bootstrap Card → shadcn/ui Card + Tailwind
- *   - useDashboardData, MealForm, WeightForm, EditMealModal を TS版に差し替え
+ * Phase 4 変更点:
+ *   - useGoalSettings フックを呼び出して goals を取得
+ *   - RecordTab に goals を伝搬（PFCSummary で目標値表示）
+ *   - SettingsPage を settingsContent として AppShell に渡す
  *
- * アーキテクチャ（変更なし）:
+ * Phase 3 までの責務（変更なし）:
  *   Dashboard は「統合レイヤー」として機能する。
- *   - useDashboardData フック: データ取得
- *   - RecordTab: 記録ページの表示
- *   - AnalysisPage: 分析ページの表示
+ *   - useDashboardData フック: 食事/体重/サマリー データ取得
+ *   - useGoalSettings フック: 栄養目標 (Phase 4 で追加)
+ *   - RecordTab / AnalysisPage / SettingsPage: 各ページの表示
  *   - AppShell: レイアウト + ページルーティング
  *
  * Fix #10 維持: useMemo でフォームスロットをメモ化
@@ -27,6 +27,7 @@ import { useDashboardData } from "../hooks/useDashboardData";
 import { AppShell } from "@/components/layout";
 import { RecordTab } from "@/features/record";
 import { AnalysisPage } from "@/features/analysis";
+import { SettingsPage, useGoalSettings } from "@/features/settings";
 import type { MealRecord } from "@/types";
 
 interface DashboardProps {
@@ -44,6 +45,9 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
 
   const { data, actions } = useDashboardData(initialDate);
   const { meals, allMeals, weights, dailySummary, selectedDate } = data;
+
+  // Phase 4: 栄養目標値を取得して RecordTab に伝搬
+  const { goals } = useGoalSettings();
 
   const onMealUpdateWrapper = (updatedMeal: MealRecord) => {
     actions.handleMealUpdated(updatedMeal);
@@ -98,6 +102,7 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
       onDateChange={actions.handleDateChange}
       meals={meals}
       dailySummary={dailySummary}
+      goals={goals}
       onMealEdit={(meal) => setEditingMeal(meal as MealRecord)}
       onMealDelete={confirmDelete}
       mealFormSlot={mealFormSlot}
@@ -127,6 +132,9 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
     />
   );
 
+  // Phase 4: 設定ページコンテンツ
+  const settingsContent = <SettingsPage />;
+
   return (
     <>
       <InstallPWA />
@@ -134,6 +142,7 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
         onLogout={handleLogout}
         recordContent={recordContent}
         analysisContent={analysisContent}
+        settingsContent={settingsContent}
       />
 
       {/* 編集モーダル */}
