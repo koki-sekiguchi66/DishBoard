@@ -305,37 +305,33 @@ class LogoutTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
         response = self.client.post(self.logout_url)
 
-        if response.status_code != status.HTTP_404_NOT_FOUND:
-            self.assertIn(response.status_code, [
-                status.HTTP_200_OK,
-                status.HTTP_204_NO_CONTENT
-            ])
-            
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
     def test_logout_without_authentication(self):
         """未認証でのログアウト"""
         response = self.client.post(self.logout_url)
 
-        if response.status_code != status.HTTP_404_NOT_FOUND:
-            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_logout_deletes_token(self):
         """ログアウト後にトークンが削除される"""
         self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
         response = self.client.post(self.logout_url)
-        
-        if response.status_code in [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT]:
-            self.assertFalse(Token.objects.filter(user=self.user).exists())
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Token.objects.filter(user=self.user).exists())
 
     def test_logout_invalidates_token_for_requests(self):
         """ログアウト後は同じトークンでアクセスできない"""
         token_key = self.token.key
         self.client.credentials(HTTP_AUTHORIZATION=f'Token {token_key}')
-        
+
         response = self.client.post(self.logout_url)
-        
-        if response.status_code in [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT]:
-            response = self.client.get('/api/meals/')
-            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token_key}')
+        response = self.client.get('/api/meals/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class UserProfileTests(APITestCase):
@@ -355,14 +351,14 @@ class UserProfileTests(APITestCase):
         """ユーザープロファイルの取得"""
         self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
         response = self.client.get(self.profile_url)
-        
-        if response.status_code == status.HTTP_200_OK:
-            self.assertEqual(response.data['username'], 'testuser')
-            self.assertEqual(response.data['email'], 'test@example.com')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['username'], 'testuser')
+        self.assertEqual(response.data['email'], 'test@example.com')
+        self.assertIn('date_joined', response.data)
 
     def test_get_profile_unauthenticated(self):
         """未認証でのプロファイル取得"""
         response = self.client.get(self.profile_url)
-        
-        if response.status_code != status.HTTP_404_NOT_FOUND:
-            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
