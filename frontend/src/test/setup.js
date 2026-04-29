@@ -6,7 +6,7 @@ afterEach(() => {
   cleanup();
 });
 
-// --- localStorage のモック ---
+//  localStorage のモック
 const localStorageMock = (() => {
   let store = {};
   return {
@@ -23,15 +23,31 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 });
 
-// --- window.location のモック ---
+
 // axios.jsの401エラーハンドラーがwindow.location.hrefを使用するため
 delete window.location;
 window.location = { href: '', reload: vi.fn() };
 
-// --- ResizeObserver のモック ---
-// Recharts 等のチャートライブラリが jsdom 環境で要求するため
+
+// Recharts 等のチャートライブラリが jsdom 環境で要求するためモック追加
 global.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
   disconnect() {}
 };
+
+global.IntersectionObserver = class IntersectionObserver {
+  constructor() {}
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
+Object.defineProperty(window, 'matchMedia', {
+  value: (query) => ({
+    matches: false,
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }),
+});
