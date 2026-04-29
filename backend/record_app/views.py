@@ -16,8 +16,8 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .models import MealRecord, WeightRecord, CustomFood, CafeteriaMenu, CustomMenu
 from .serializers import (
-    MealRecordSerializer, MealRecordListSerializer, 
-    UserRegistrationSerializer, WeightRecordSerializer,
+    MealRecordSerializer, MealRecordListSerializer,
+    UserRegistrationSerializer, UserProfileSerializer, WeightRecordSerializer,
     CustomFoodSerializer, CafeteriaMenuSerializer,
     CustomMenuSerializer, CustomMenuListSerializer
 )
@@ -311,6 +311,24 @@ class UserRegistrationView(generics.CreateAPIView):
     """ユーザー登録View"""
     serializer_class = UserRegistrationSerializer
     permission_classes = [permissions.AllowAny]
+
+
+class UserProfileView(generics.RetrieveAPIView):
+    """ユーザープロフィール取得 View（Phase 4.5）"""
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+
+class LogoutView(APIView):
+    """トークン削除によるログアウト View"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        request.user.auth_token.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # =============================================================================

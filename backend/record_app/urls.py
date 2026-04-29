@@ -17,7 +17,8 @@ from rest_framework.routers import DefaultRouter
 from rest_framework.authtoken.views import obtain_auth_token
 from .views import (
     MealTimingChoicesView, MealRecordViewSet, WeightRecordViewSet,
-    CustomFoodViewSet, UserRegistrationView, CustomMenuViewSet,
+    CustomFoodViewSet, UserRegistrationView, UserProfileView, LogoutView,
+    CustomMenuViewSet,
     search_foods, food_suggestions, calculate_nutrition,
     daily_nutrition_summary, list_cafeteria_menus, health_check,
     process_nutrition_label,
@@ -38,6 +39,8 @@ urlpatterns = [
     path('', include(router.urls)),
     path('register/', UserRegistrationView.as_view(), name='register'),
     path('login/', obtain_auth_token, name='login'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+    path('profile/', UserProfileView.as_view(), name='profile'),
 
     # 食品検索・栄養計算（ViewSet に馴染まない横断的操作）
     path('foods/search/', search_foods, name='search-foods'),
