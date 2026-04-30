@@ -1,26 +1,20 @@
 /**
- * AppearanceSettings — 表示設定コンポーネント（Phase 4 スタブ版）
+ * AppearanceSettings — 表示設定コンポーネント（Phase 5 課題② 本格実装）
  *
- * Phase 4 では「枠組みのみ」実装。
- * 実際のテーマ切替（ダーク/ライト）は将来的にニーズが顕在化したら実装する。
- *
- * 現状の DishBoard は Dark Pop 一択のため、Switch は disabled。
- * Phase 5 以降で次のような拡張を想定:
- *   - ダーク/ライトテーマ切替
- *   - フォントサイズ（小/中/大）
- *   - キャラクター表示の有無
- *
- * 設計判断:
- *   - YAGNI: 今は不要だが、設定ページの「形」を整えるためのプレースホルダー
- *   - Switch コンポーネントの利用例として教育的価値もある
+ * Phase 5 変更点:
+ *   - useTheme フックと接続し、Switch を有効化
+ *   - Badge「近日公開」を削除
+ *   - テーマ状態に応じた説明文を動的表示
  */
 import { Palette } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { useTheme } from "../hooks/useTheme";
 
 export function AppearanceSettings() {
+  const { theme, toggle } = useTheme();
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -32,23 +26,20 @@ export function AppearanceSettings() {
       <CardContent>
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="dark-mode-toggle" className="text-sm font-medium">
-                ダークモード
-              </Label>
-              <Badge variant="secondary" className="text-[10px]">
-                近日公開
-              </Badge>
-            </div>
+            <Label htmlFor="dark-mode-toggle" className="text-sm font-medium">
+              ダークモード
+            </Label>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              現在は常時ダークテーマが適用されています
+              {theme === "dark"
+                ? "ダークテーマが適用されています"
+                : "ライトテーマが適用されています"}
             </p>
           </div>
           <Switch
             id="dark-mode-toggle"
-            checked={true}
-            disabled
-            aria-label="ダークモード切替（無効）"
+            checked={theme === "dark"}
+            onCheckedChange={toggle}
+            aria-label="ダークモード切替"
           />
         </div>
       </CardContent>

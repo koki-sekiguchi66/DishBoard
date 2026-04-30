@@ -6,6 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DishBoard - 健康記録アプリ</title>
     
+    <script>
+      (function() {
+        var stored = localStorage.getItem("dishboard-theme");
+        if (stored === "light") document.documentElement.classList.add("light");
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
