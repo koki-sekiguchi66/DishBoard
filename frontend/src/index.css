@@ -46,6 +46,13 @@
   --color-lunch: oklch(0.71 0.15 230);
   --color-dinner: oklch(0.65 0.17 293);
   --color-snack: oklch(0.77 0.2 131);
+
+  /* ── Base Styles ── */
+  font-family: var(--font-sans);
+  background-color: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Tailwind テーマ　*/
@@ -94,15 +101,3 @@
   --font-sans: "Noto Sans JP", system-ui, sans-serif;
 }
 
-/* Tailwind新UIコンポーネント用スタイル
- * Bootstrap のグローバルスタイルとの競合を避けるため、
- * Tailwind の新UIは .dishboard-app クラス配下でのみ適用。
-  */
-
-.dishboard-app {
-  font-family: var(--font-sans);
-  background-color: var(--background);
-  color: var(--foreground);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}

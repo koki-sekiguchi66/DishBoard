@@ -51,9 +51,9 @@ describe("AppShell", () => {
     expect(screen.getByText("Coming Soon...")).toBeInTheDocument();
   });
 
-  it("dishboard-app クラスが適用されている", () => {
+  it("ルート要素に min-h-screen クラスが適用されている", () => {
     const { container } = render(<AppShell {...defaultProps} />);
 
-    expect(container.querySelector(".dishboard-app")).toBeInTheDocument();
+    expect(container.querySelector(".min-h-screen")).toBeInTheDocument();
   });
 });

@@ -8,7 +8,7 @@ vi.mock('@/features/customFoods/api/customFoodApi', () => ({
   },
 }));
 
-vi.mock('react-hot-toast', () => ({
+vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),

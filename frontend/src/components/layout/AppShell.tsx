@@ -65,7 +65,7 @@ export function AppShell({
   };
 
   return (
-    <div className="dishboard-app min-h-screen">
+    <div className="min-h-screen">
       <Header onMenuOpen={() => setSidebarOpen(true)} />
       <Sidebar
         open={sidebarOpen}

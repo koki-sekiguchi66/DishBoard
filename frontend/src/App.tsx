@@ -82,7 +82,7 @@ function App() {
 
   // 未認証 → 認証画面
   return (
-    <div className="dishboard-app flex min-h-screen items-center justify-center bg-background px-4 py-8">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-md">
         {/* ヘッダー: アプリ名 */}
         <div className="mb-6 text-center">
