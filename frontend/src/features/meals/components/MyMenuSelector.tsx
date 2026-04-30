@@ -1,32 +1,37 @@
-// src/features/meals/components/MyMenusSelector.jsx
+// src/features/meals/components/MyMenusSelector.tsx
 
 import React, { useState, useEffect } from 'react';
-import { Card, ListGroup, Button, Badge, Spinner, Alert } from 'react-bootstrap';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Bookmark, AlertTriangle, Info, Plus } from 'lucide-react';
 import { customMenuApi } from '@/features/customMenus/api/customMenuApi';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
+import type { CustomMenu } from '@/types';
 
 /**
  * Myメニューセレクター
- * 
+ *
  * 役割:
  * - 保存済みカスタムメニューの一覧を表示
  * - メニュー選択で全アイテムを読み込み
- * 
+ *
  * 設計原則:
  * - ローディング状態の管理
  * - エラーハンドリング
  */
-const MyMenusSelector = ({ menuBuilder }) => {
-  const [menus, setMenus] = useState([]);
+const MyMenusSelector = ({ menuBuilder }: { menuBuilder: { loadFromCustomMenu: (menu: CustomMenu) => void } }) => {
+  const [menus, setMenus] = useState<CustomMenu[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  
+  const [error, setError] = useState<string | null>(null);
+
   // カスタムメニュー一覧取得
   useEffect(() => {
     const fetchMenus = async () => {
       setIsLoading(true);
       setError(null);
-      
+
       try {
         const data = await customMenuApi.getMenus();
         setMenus(data);
@@ -37,12 +42,12 @@ const MyMenusSelector = ({ menuBuilder }) => {
         setIsLoading(false);
       }
     };
-    
+
     fetchMenus();
   }, []);
-  
+
   // メニューを読み込む
-  const handleSelectMenu = async (menuId) => {
+  const handleSelectMenu = async (menuId: number) => {
     try {
       const menuDetail = await customMenuApi.getMenuDetail(menuId);
       menuBuilder.loadFromCustomMenu(menuDetail);
@@ -51,93 +56,92 @@ const MyMenusSelector = ({ menuBuilder }) => {
       toast.error('メニューの読み込みに失敗しました');
     }
   };
-  
+
   // ローディング中
   if (isLoading) {
     return (
       <div className="text-center py-4">
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">読み込み中...</span>
-        </Spinner>
-        <p className="text-muted mt-2">メニューを読み込み中...</p>
+        <Loader2 className="h-4 w-4 animate-spin mx-auto mb-2" role="status" />
+        <span className="sr-only">読み込み中...</span>
+        <p className="text-muted-foreground mt-2">メニューを読み込み中...</p>
       </div>
     );
   }
-  
+
   // エラー時
   if (error) {
     return (
-      <Alert variant="danger">
-        <i className="bi bi-exclamation-triangle me-2"></i>
-        {error}
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>{error}</AlertDescription>
       </Alert>
     );
   }
-  
+
   // メニューが0件
   if (menus.length === 0) {
     return (
-      <Alert variant="info">
-        <i className="bi bi-info-circle me-2"></i>
-        保存されたメニューがありません。メニューを作成して保存してください。
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          保存されたメニューがありません。メニューを作成して保存してください。
+        </AlertDescription>
       </Alert>
     );
   }
-  
+
   // メニュー一覧表示
   return (
     <div>
-      <h6 className="mb-3">
-        <i className="bi bi-bookmark-star me-2"></i>
+      <h6 className="mb-3 flex items-center gap-2">
+        <Bookmark className="h-4 w-4" />
         保存済みメニュー ({menus.length}件)
       </h6>
-      
-      <ListGroup>
+
+      <ul className="divide-y divide-border">
         {menus.map((menu) => (
-          <ListGroup.Item
+          <li
             key={menu.id}
-            className="d-flex justify-content-between align-items-start"
+            className="flex justify-between items-start py-3"
           >
-            <div className="flex-grow-1">
-              <div className="fw-bold mb-1">{menu.name}</div>
-              
+            <div className="flex-1">
+              <div className="font-bold mb-1">{menu.name}</div>
+
               {menu.description && (
-                <p className="text-muted small mb-2">{menu.description}</p>
+                <p className="text-muted-foreground text-sm mb-2">{menu.description}</p>
               )}
-              
-              <div className="d-flex flex-wrap gap-2 mb-2">
-                <Badge bg="info">
+
+              <div className="flex flex-wrap gap-2 mb-2">
+                <Badge variant="secondary">
                   {menu.total_calories.toFixed(0)} kcal
                 </Badge>
-                <Badge bg="secondary">
+                <Badge variant="secondary">
                   P: {menu.total_protein.toFixed(1)}g
                 </Badge>
-                <Badge bg="secondary">
+                <Badge variant="secondary">
                   F: {menu.total_fat.toFixed(1)}g
                 </Badge>
-                <Badge bg="secondary">
+                <Badge variant="secondary">
                   C: {menu.total_carbohydrates.toFixed(1)}g
                 </Badge>
               </div>
-              
-              <small className="text-muted">
-                <i className="bi bi-list-ul me-1"></i>
+
+              <small className="text-muted-foreground">
                 {menu.items_count}個のアイテム
               </small>
             </div>
-            
+
             <Button
-              variant="primary"
               size="sm"
               onClick={() => handleSelectMenu(menu.id)}
-              className="ms-2"
+              className="ml-2"
             >
-              <i className="bi bi-plus-circle me-1"></i>
+              <Plus className="h-4 w-4 mr-1" />
               読み込む
             </Button>
-          </ListGroup.Item>
+          </li>
         ))}
-      </ListGroup>
+      </ul>
     </div>
   );
 };

@@ -1,26 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { ListGroup, Spinner, Alert, Badge, Button, ButtonGroup } from 'react-bootstrap';
-import { toast } from 'react-hot-toast';
+import { Loader2, UtensilsCrossed, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import type { CustomFood } from '@/types';
 import { mealApi } from '../api/mealApi';
 import { customFoodApi } from '@/features/customFoods/api/customFoodApi';
 import CustomFoodFormModal from '@/features/customFoods/components/CustomFoodFormModal';
-import { EditCustomFoodModal } from '@/features/customFoods'; 
+import { EditCustomFoodModal } from '@/features/customFoods';
 
-const MyItemsSelector = ({ onItemSelected }) => {
-  const [items, setItems] = useState([]);
+const MyItemsSelector = ({ onItemSelected }: { onItemSelected: (item: Record<string, unknown>) => void }) => {
+  const [items, setItems] = useState<CustomFood[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItem, setSelectedItem] = useState<CustomFood | null>(null);
 
   // データ取得
   const fetchCustomFoods = async () => {
     setLoading(true);
     try {
       const data = await mealApi.getCustomFoods();
-      setItems(data);
+      setItems(data as CustomFood[]);
     } catch (err) {
       console.error(err);
       setError('Myアイテムの取得に失敗しました。');
@@ -34,14 +38,14 @@ const MyItemsSelector = ({ onItemSelected }) => {
   }, []);
 
   // 削除処理
-  const handleDelete = async (e, item) => {
-    e.stopPropagation(); 
+  const handleDelete = async (e: React.MouseEvent, item: CustomFood) => {
+    e.stopPropagation();
     if (!window.confirm(`「${item.name}」を削除してもよろしいですか？`)) return;
 
     try {
       await customFoodApi.deleteCustomFood(item.id);
       toast.success('削除しました');
-      fetchCustomFoods(); 
+      fetchCustomFoods();
     } catch (err) {
       console.error(err);
       toast.error('削除に失敗しました');
@@ -49,7 +53,7 @@ const MyItemsSelector = ({ onItemSelected }) => {
   };
 
   // 編集モーダル
-  const handleEdit = (e, item) => {
+  const handleEdit = (e: React.MouseEvent, item: CustomFood) => {
     e.stopPropagation();
     setSelectedItem(item);
     setShowEditModal(true);
@@ -60,80 +64,93 @@ const MyItemsSelector = ({ onItemSelected }) => {
     fetchCustomFoods();
   };
 
-  if (loading) return <div className="text-center p-3"><Spinner animation="border" size="sm" /> 読み込み中...</div>;
-  if (error) return <Alert variant="danger">{error}</Alert>;
+  if (loading) return (
+    <div className="text-center p-3">
+      <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
+      読み込み中...
+    </div>
+  );
+  if (error) return (
+    <Alert variant="destructive">
+      <AlertDescription>{error}</AlertDescription>
+    </Alert>
+  );
 
   return (
     <>
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h6 className="m-0"><i className="bi bi-egg-fried me-2"></i>Myアイテム一覧</h6>
-        <Button 
-          variant="outline-primary" 
-          size="sm" 
+      <div className="flex justify-between items-center mb-3">
+        <h6 className="m-0 flex items-center gap-2">
+          <UtensilsCrossed className="h-4 w-4" />
+          Myアイテム一覧
+        </h6>
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => setShowCreateModal(true)}
         >
-          <i className="bi bi-plus-lg me-1"></i>新規作成
+          <Plus className="h-4 w-4 mr-1" />新規作成
         </Button>
       </div>
 
       {items.length === 0 ? (
-        <div className="text-center text-muted p-3 bg-light rounded">
+        <div className="text-center text-muted-foreground p-3 bg-muted rounded">
           登録されたMyアイテムはありません。<br />
           「新規作成」から追加してください。
         </div>
       ) : (
         <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-          <ListGroup variant="flush">
+          <ul className="divide-y divide-border">
             {items.map((item) => (
-              <ListGroup.Item 
-                key={item.id} 
-                action 
-                className="d-flex justify-content-between align-items-center px-2 py-2"
+              <li
+                key={item.id}
+                className="flex justify-between items-center px-2 py-2 cursor-pointer hover:bg-muted"
                 onClick={() => onItemSelected({
                   ...item,
                   item_type: 'custom',
                   amount: 100
                 })}
               >
-                <div className="flex-grow-1">
-                  <div className="fw-bold text-primary">{item.name}</div>
-                  <small className="text-muted">
-                    {item.calories_per_100g}kcal <span className="mx-1">|</span> 
+                <div className="flex-1">
+                  <div className="font-bold text-primary">{item.name}</div>
+                  <small className="text-muted-foreground">
+                    {item.calories_per_100g}kcal <span className="mx-1">|</span>
                     P:{item.protein_per_100g}g
                   </small>
                 </div>
-                
-                <div className="d-flex align-items-center gap-2">
-                  <Badge bg="primary" pill className="me-2">メニューに追加</Badge>
-                  
-                  <ButtonGroup size="sm">
-                    <Button 
-                      variant="light" 
-                      className="text-secondary border-0"
+
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="mr-2">メニューに追加</Badge>
+
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground border-0"
                       title="編集"
                       onClick={(e) => handleEdit(e, item)}
                     >
-                      <i className="bi bi-pencil"></i>
+                      <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button 
-                      variant="light" 
-                      className="text-danger border-0"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive border-0"
                       title="削除"
                       onClick={(e) => handleDelete(e, item)}
                     >
-                      <i className="bi bi-trash"></i>
+                      <Trash2 className="h-4 w-4" />
                     </Button>
-                  </ButtonGroup>
+                  </div>
                 </div>
-              </ListGroup.Item>
+              </li>
             ))}
-          </ListGroup>
+          </ul>
         </div>
       )}
 
       {/* 新規作成モーダル */}
       {showCreateModal && (
-        <CustomFoodFormModal 
+        <CustomFoodFormModal
           show={showCreateModal}
           onClose={() => setShowCreateModal(false)}
           onFoodCreated={handleSuccess}
