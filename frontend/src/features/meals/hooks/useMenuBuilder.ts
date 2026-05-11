@@ -1,54 +1,44 @@
-/**
- * useMenuBuilder — メニュービルダーのビジネスロジックフック（TypeScript版）
- *
- * Phase 3: JS→TS移行。
- * - 型定義追加（MenuBuilderItem, FullNutrition）
- * - EMPTY_NUTRITION 定数でマジックナンバー排除
- * - ロジック変更なし
- */
 import { useState, useMemo } from "react";
 import { mealApi } from "../api/mealApi";
 import { customMenuApi } from "@/features/customMenus/api/customMenuApi";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 import type {
   FullNutrition,
   MealTiming,
   MenuBuilderItem,
-  CustomMenuItemDetail,
+  CustomMenu,
+  ItemType,
+  MealRecord,
 } from "@/types";
 import { EMPTY_NUTRITION, FULL_NUTRITION_KEYS } from "@/types";
 
 type InputMethod = "search" | "myItems" | "myMenus" | "cafeteria" | "manual";
 
 export interface MenuBuilderReturn {
-  // 基本設定
   recordDate: string;
   setRecordDate: (date: string) => void;
   mealTiming: MealTiming;
   setMealTiming: (timing: MealTiming) => void;
   activeInputMethod: InputMethod;
   setActiveInputMethod: (method: InputMethod) => void;
-  // メニュー内容
   menuItems: MenuBuilderItem[];
   totalNutrition: FullNutrition;
   addMenuItem: (item: Record<string, unknown>) => void;
   removeMenuItem: (tempId: number) => void;
-  loadFromCustomMenu: (menuDetail: { name: string; items: CustomMenuItemDetail[] }) => void;
+  loadFromCustomMenu: (menuDetail: CustomMenu) => void;
   handleClearMenu: () => void;
-  // 保存オプション
   saveAsMenu: boolean;
   setSaveAsMenu: (v: boolean) => void;
   menuName: string;
   setMenuName: (v: string) => void;
   menuDescription: string;
   setMenuDescription: (v: string) => void;
-  // 送信
   handleSubmit: () => Promise<void>;
   isSubmitting: boolean;
 }
 
 export const useMenuBuilder = (
-  onMealCreated: (meal: unknown) => void
+  onMealCreated: (meal: MealRecord) => void
 ): MenuBuilderReturn => {
   const [recordDate, setRecordDate] = useState(
     () => {
@@ -88,11 +78,13 @@ export const useMenuBuilder = (
     setMenuItems(menuItems.filter((item) => item.tempId !== tempId));
   };
 
-  const loadFromCustomMenu = (menuDetail: { name: string; items: CustomMenuItemDetail[] }) => {
-    const newItems: MenuBuilderItem[] = menuDetail.items.map((item) => ({
+  const loadFromCustomMenu = (menuDetail: CustomMenu) => {
+    const items = menuDetail.items ?? [];
+    const newItems: MenuBuilderItem[] = items.map((item) => ({
       ...item,
       tempId: Date.now() + Math.random() + item.id,
       display_order: menuItems.length + item.display_order,
+      item_type: item.item_type as ItemType,
     }));
     setMenuItems([...menuItems, ...newItems]);
     toast.success(`メニュー「${menuDetail.name}」を読み込みました`);
@@ -185,7 +177,6 @@ export const useMenuBuilder = (
       toast.success("食事記録を登録しました！");
       onMealCreated(createdMeal);
 
-      // リセット
       setMenuItems([]);
       setMenuName("");
       setMenuDescription("");

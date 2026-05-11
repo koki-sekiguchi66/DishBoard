@@ -12,10 +12,7 @@ class Command(BaseCommand):
         file_path = options['file_path']
 
         def clean_value(value):
-            """
-            '(Tr)', '-', 'Tr', '*', '' などを0.0に変換する。
-            括弧も取り除く。
-            """
+            """'(Tr)', '-', 'Tr', '*', '' などの欠測値表現を 0.0 に変換し、括弧を除去する。"""
             if isinstance(value, str):
                 value = value.strip()
                 if value in ('(Tr)', '-', 'Tr', '*', ''):
@@ -29,8 +26,7 @@ class Command(BaseCommand):
 
         with open(file_path, 'r', encoding='utf-8') as f:
             reader = csv.reader(f)
-            # ヘッダーを13行読み飛ばす
-            for _ in range(13):
+            for _ in range(13):  # CSV先頭13行はヘッダー
                 next(reader)
             
             count = 0

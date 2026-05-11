@@ -20,7 +20,6 @@ class MealService:
         if multiplier <= 0:
             raise ValueError('倍率は正の数でなければなりません')
 
-        # 食事記録ヘッダーの作成
         meal_record = MealRecord.objects.create(
             user=user,
             record_date=record_date,
@@ -40,7 +39,6 @@ class MealService:
             vitamin_c=menu.total_vitamin_c * multiplier,
         )
 
-        # 明細行の作成
         menu_items = menu.items.all()
         MealRecordItem.objects.bulk_create([
             MealRecordItem(
@@ -87,6 +85,5 @@ class CustomFoodService:
     
     @staticmethod
     def create_custom_food(user, data: dict) -> CustomFood:
-        """栄養計算サービスを利用してカスタム食品を作成する"""
         calculator = NutritionCalculatorService()
         return calculator.create_custom_food(user, data)

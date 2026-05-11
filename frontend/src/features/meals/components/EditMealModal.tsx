@@ -1,9 +1,3 @@
-/**
- * EditMealModal — 食事記録編集モーダル（Tailwind + shadcn/ui版）
- *
- * Phase 3: Bootstrap Modal → shadcn/ui Dialog。
- * @radix-ui/react-dialog は Sheet 用に導入済みのため追加インストール不要。
- */
 import { useState, type ChangeEvent } from "react";
 import {
   Pencil,
@@ -144,7 +138,7 @@ export default function EditMealModal({
                   <Input
                     type="number"
                     name={field.name}
-                    value={mealData[field.name as keyof typeof mealData] ?? 0}
+                    value={(mealData[field.name as keyof typeof mealData] as number) ?? 0}
                     onChange={handleChange}
                     step={field.step}
                     className="h-8 text-sm"
@@ -165,7 +159,7 @@ export default function EditMealModal({
                         type="number"
                         name={field.name}
                         value={
-                          mealData[field.name as keyof typeof mealData] ?? 0
+                          (mealData[field.name as keyof typeof mealData] as number) ?? 0
                         }
                         onChange={handleChange}
                         step={field.step}

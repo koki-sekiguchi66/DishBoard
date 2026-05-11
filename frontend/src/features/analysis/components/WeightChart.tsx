@@ -1,9 +1,3 @@
-/**
- * WeightChart — 体重推移グラフ（Phase 2 移行版）
- *
- * 変更点: CalorieChart と同様に Bootstrap → Tailwind/shadcn/ui 移行。
- * Recharts 自体は変更なし。
- */
 import { useMemo } from "react";
 import {
   LineChart,
@@ -21,7 +15,6 @@ interface Weight {
   id: number;
   record_date: string;
   weight: number | string;
-  [key: string]: unknown;
 }
 
 interface WeightChartProps {

@@ -1,13 +1,3 @@
-/**
- * WeeklyTrend — 週間トレンドサマリー
- *
- * 直近7日間のカロリー平均・PFC平均を表示し、前週との差分を矢印で示す。
- * 分析ページ上部に配置してユーザーの傾向を一目で把握できるようにする。
- *
- * 設計判断:
- *   - 計算ロジックは useMemo で最適化（meals 配列の変更時のみ再計算）
- *   - 差分表示は TrendingUp/TrendingDown/Minus アイコンで直感的に
- */
 import { useMemo } from "react";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +10,6 @@ interface Meal {
   protein: number | string;
   fat: number | string;
   carbohydrates: number | string;
-  [key: string]: unknown;
 }
 
 interface WeeklyTrendProps {

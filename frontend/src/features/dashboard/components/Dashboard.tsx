@@ -1,25 +1,7 @@
-/**
- * Dashboard — DishBoard メイン画面（Phase 4 更新版）
- *
- * Phase 4 変更点:
- *   - useGoalSettings フックを呼び出して goals を取得
- *   - RecordTab に goals を伝搬（PFCSummary で目標値表示）
- *   - SettingsPage を settingsContent として AppShell に渡す
- *
- * Phase 3 までの責務（変更なし）:
- *   Dashboard は「統合レイヤー」として機能する。
- *   - useDashboardData フック: 食事/体重/サマリー データ取得
- *   - useGoalSettings フック: 栄養目標 (Phase 4 で追加)
- *   - RecordTab / AnalysisPage / SettingsPage: 各ページの表示
- *   - AppShell: レイアウト + ページルーティング
- *
- * Fix #10 維持: useMemo でフォームスロットをメモ化
- */
 import { useState, useMemo } from "react";
 import { UtensilsCrossed, Scale } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-// バレルエクスポート経由（既存パターン維持）
 import { MealForm, EditMealModal } from "@/features/meals";
 import { WeightForm } from "@/features/weights";
 import { InstallPWA } from "@/components/PWA";
@@ -37,7 +19,7 @@ interface DashboardProps {
 const Dashboard = ({ handleLogout }: DashboardProps) => {
   const [editingMeal, setEditingMeal] = useState<MealRecord | null>(null);
 
-  // 日付初期値: toISOString() を使わない（UTC変換によるJSTずれ防止）
+  // toISOString() は UTC 変換で JST の日付がずれるためローカル時刻で組み立てる
   const initialDate = useMemo(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -46,7 +28,6 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
   const { data, actions } = useDashboardData(initialDate);
   const { meals, allMeals, weights, dailySummary, selectedDate } = data;
 
-  // Phase 4: 栄養目標値を取得して RecordTab に伝搬
   const { goals } = useGoalSettings();
 
   const onMealUpdateWrapper = (updatedMeal: MealRecord) => {
@@ -60,7 +41,6 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
     }
   };
 
-  // ── Fix #10: フォームスロットをメモ化（Bootstrap Card → shadcn/ui Card） ──
   const mealFormSlot = useMemo(
     () => (
       <Card>
@@ -95,7 +75,6 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
     [actions.handleWeightCreated]
   );
 
-  // ── ページコンテンツ ──
   const recordContent = (
     <RecordTab
       selectedDate={selectedDate}
@@ -132,7 +111,6 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
     />
   );
 
-  // Phase 4: 設定ページコンテンツ
   const settingsContent = <SettingsPage />;
 
   return (
@@ -145,7 +123,6 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
         settingsContent={settingsContent}
       />
 
-      {/* 編集モーダル */}
       {editingMeal && (
         <EditMealModal
           meal={editingMeal}

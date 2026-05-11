@@ -1,27 +1,3 @@
-/**
- * GoalSettings — 栄養目標値設定コンポーネント
- *
- * Phase 4 で導入。目標カロリーと PFC 比率を設定し、localStorage に永続化する。
- *
- * UX 設計:
- *   - カロリーは Slider（1200〜3500 kcal、50 kcal 刻み）
- *   - PFC は比率（％）の Slider で操作する
- *     → 合計が 100% になるよう、変更時に他の2栄養素を比例配分で調整
- *   - 表示は「タンパク質 20% (100g)」のように比率と g を併記
- *
- * データモデル:
- *   - 内部状態: percentages (P/F/C の％)
- *   - 永続化: NutritionGoals (calories + g単位の P/F/C) で保存
- *   - 比率 → g 変換は KCAL_PER_GRAM 定数を使用
- *     例: 2000kcal × 20% ÷ 4kcal/g = 100g (タンパク質)
- *
- * 設計判断:
- *   - 比率の合計を 100% に保つ「自動調整」ロジック
- *     → 1つを動かすと、他の2つが現在比で按分される
- *     → これにより、ユーザーは「合計を意識せず」直感的に操作できる
- *   - リセットボタンで DEFAULT_GOALS に戻せる
- *   - useGoalSettings フックを通じて永続化（fault tolerance はフック側）
- */
 import { useState, useEffect } from "react";
 import { Target, RotateCcw, Flame, Beef, Droplets, Wheat } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,38 +10,12 @@ import {
   type NutritionGoals,
 } from "@/types/settings";
 
-/** カロリー Slider の範囲。マジックナンバー排除 */
-const CALORIE_RANGE = {
-  min: 1200,
-  max: 3500,
-  step: 50,
-} as const;
-
-/** PFC 比率 Slider の範囲（％） */
-const RATIO_RANGE = {
-  min: 5,
-  max: 80,
-  step: 1,
-} as const;
-
-/** デフォルト比率（％）。DEFAULT_GOALS と整合 */
-const DEFAULT_RATIOS = {
-  protein: 20,
-  fat: 25,
-  carbs: 55,
-} as const;
-
+const CALORIE_RANGE = { min: 1200, max: 3500, step: 50 } as const;
+const RATIO_RANGE = { min: 5, max: 80, step: 1 } as const;
+const DEFAULT_RATIOS = { protein: 20, fat: 25, carbs: 55 } as const;
 const TOTAL_PERCENT = 100;
 
-/**
- * NutritionGoals (g単位) → 比率 (％) に変換
- * 各栄養素のカロリー寄与から比率を逆算する。
- */
-function goalsToRatios(goals: NutritionGoals): {
-  protein: number;
-  fat: number;
-  carbs: number;
-} {
+function goalsToRatios(goals: NutritionGoals): { protein: number; fat: number; carbs: number } {
   const total = goals.calories;
   if (total <= 0) return { ...DEFAULT_RATIOS };
 
@@ -76,9 +26,6 @@ function goalsToRatios(goals: NutritionGoals): {
   };
 }
 
-/**
- * 比率 (％) + カロリー → NutritionGoals (g単位) に変換
- */
 function ratiosToGoals(
   calories: number,
   ratios: { protein: number; fat: number; carbs: number }
@@ -92,19 +39,8 @@ function ratiosToGoals(
 }
 
 /**
- * 1つの栄養素の比率を変更したとき、他の2つを按分調整して合計100%を維持する。
- *
- * アルゴリズム:
- *   1. 残り合計（100 - newValue）を求める
- *   2. 他の2つの現在比率の合計を求める
- *   3. 各栄養素を「残り合計 × (現在比率 / 他2つの合計)」で再計算
- *   4. 端数調整: round で誤差が出たら 1 つ目に吸収させる
- *
- * 例: protein 20→30 に変更（fat 25, carbs 55）
- *   残り = 70, 他合計 = 80
- *   fat  = 70 * 25/80 = 21.875 → 22
- *   carbs = 70 * 55/80 = 48.125 → 48
- *   合計 30+22+48 = 100 ✅
+ * 1つの比率を変更したとき他の2つを現在比で按分し合計 100% を維持する。
+ * 端数は2つ目に吸収して合計を必ず 100 に保つ。
  */
 function rebalanceRatios(
   changed: "protein" | "fat" | "carbs",
@@ -117,18 +53,16 @@ function rebalanceRatios(
   );
   const otherSum = others.reduce((sum, k) => sum + current[k], 0);
 
-  // エッジケース: 他の2つが両方0なら均等配分
   if (otherSum <= 0) {
     const each = Math.floor(remaining / 2);
     const result = { ...current, [changed]: newValue };
     result[others[0]] = each;
-    result[others[1]] = remaining - each; // 端数を2つ目に
+    result[others[1]] = remaining - each;
     return result;
   }
 
   const result = { ...current, [changed]: newValue };
   result[others[0]] = Math.round((remaining * current[others[0]]) / otherSum);
-  // 端数は 2 つ目で吸収（合計を必ず 100 にする）
   result[others[1]] = remaining - result[others[0]];
 
   return result;
@@ -178,10 +112,8 @@ function NutrientSlider({
 export function GoalSettings() {
   const { goals, updateGoals } = useGoalSettings();
 
-  // 内部状態は比率（％）で管理。マウント時に goals から逆算
   const [ratios, setRatios] = useState(() => goalsToRatios(goals));
 
-  // goals が外部要因で変わった場合（リセット等）に内部状態も同期
   useEffect(() => {
     setRatios(goalsToRatios(goals));
   }, [goals]);
@@ -232,7 +164,6 @@ export function GoalSettings() {
         role="region"
         aria-label="栄養目標設定"
       >
-        {/* カロリー目標 */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="flex items-center gap-1.5 font-medium text-calories">
@@ -260,10 +191,8 @@ export function GoalSettings() {
           </div>
         </div>
 
-        {/* 区切り */}
         <div className="h-px bg-border" />
 
-        {/* PFC 比率設定 */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-medium text-foreground">PFC バランス</h4>

@@ -1,14 +1,3 @@
-/**
- * CalorieChart — カロリー推移グラフ（Phase 2 移行版）
- *
- * 変更点:
- *   - Bootstrap Card → shadcn/ui Card + Tailwind
- *   - Bootstrap Icons → lucide-react
- *   - Dark Pop テーマカラー適用（Recharts のスタイル更新）
- *   - JSX → TSX（型安全化）
- *
- * Recharts 自体は変更なし（仕様書通り）。
- */
 import { useMemo } from "react";
 import {
   LineChart,
@@ -27,7 +16,6 @@ interface Meal {
   record_date: string;
   calories: number | string;
   meal_name?: string;
-  [key: string]: unknown;
 }
 
 interface CalorieChartProps {

@@ -1,25 +1,3 @@
-/**
- * App — DishBoard ルートコンポーネント（Phase 4 TSX + Tailwind 版）
- *
- * Phase 4 変更点:
- *   - JSX → TSX
- *   - react-bootstrap Container/Row/Col/Card/Button → Tailwind flex + shadcn/ui Card
- *   - Bootstrap Icons → lucide-react
- *   - Dark Pop テーマ適用（bg-background, text-foreground）
- *   - Sonner Toaster をルートに配置（InstallPWA, 将来の通知用）
- *
- * 責務（変更なし）:
- *   - 認証状態管理（token state）
- *   - localStorage トークン永続化（Fix #9 の責務集約）
- *   - 未認証時: Login/Register の切り替え表示
- *   - 認証済み: Dashboard を表示
- *
- * 設計判断:
- *   - max-w-md で中央寄せ。モバイルファーストで読みやすい幅
- *   - Card 内に Login/Register をスロット配置
- *   - 切り替えボタンは shadcn/ui Button の variant="outline"
- *   - Toaster は dishboard-app スコープの内側に置く（テーマ継承のため）
- */
 import { useState, useEffect } from "react";
 import { HeartPulse, UserPlus, LogIn } from "lucide-react";
 import { Login, Register } from "@/features/auth";
@@ -29,10 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Toaster } from "@/components/ui/sonner";
 
-/** 認証画面のビュー識別子 */
 type AuthView = "login" | "register";
 
-/** localStorage キー。マジックストリング排除 */
 const TOKEN_STORAGE_KEY = "token";
 
 function App() {
@@ -46,7 +22,6 @@ function App() {
     }
   }, []);
 
-  // Fix #9: トークン永続化はここに集約
   const handleLoginSuccess = (newToken: string) => {
     localStorage.setItem(TOKEN_STORAGE_KEY, newToken);
     setToken(newToken);
@@ -70,7 +45,6 @@ function App() {
   const switchToRegister = () => setCurrentView("register");
   const switchToLogin = () => setCurrentView("login");
 
-  // 認証済み → Dashboard 表示
   if (token) {
     return (
       <>
@@ -80,11 +54,9 @@ function App() {
     );
   }
 
-  // 未認証 → 認証画面
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-md">
-        {/* ヘッダー: アプリ名 */}
         <div className="mb-6 text-center">
           <h1 className="flex items-center justify-center gap-2 text-4xl font-bold tracking-tight">
             <HeartPulse className="h-8 w-8 text-primary" />
@@ -94,7 +66,6 @@ function App() {
           <p className="mt-2 text-sm text-muted-foreground">栄養管理アプリ</p>
         </div>
 
-        {/* 認証フォーム */}
         <Card>
           <CardContent className="p-6">
             {currentView === "login" ? (

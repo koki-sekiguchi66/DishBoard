@@ -1,13 +1,3 @@
-/**
- * MenuBuilderPanel — メニュービルダー左パネル（Tailwind + shadcn/ui版）
- *
- * Phase 3: Bootstrap Card/ButtonGroup/Form → shadcn/ui Card + Tailwind。
- *
- * 設計:
- *   5つの入力方式（検索/Myアイテム/Myメニュー/食堂/手動）をタブ切り替えで表示。
- *   食品選択の正規化処理 (handleFoodSelected) はビジネスロジックの核心部分で、
- *   Phase 3 でもロジック変更なし。
- */
 import {
   Search,
   EggFried,
@@ -62,10 +52,6 @@ export default function MenuBuilderPanel({ menuBuilder }: MenuBuilderPanelProps)
     addMenuItem,
   } = menuBuilder;
 
-  /**
-   * 食品選択時の正規化処理
-   * 各入力方式（検索/Myアイテム/食堂/手動）から統一形式に変換してカートに追加。
-   */
   const handleFoodSelected = (item: FoodSelectionItem) => {
     const amount = parseFloat(
       String(item.amount_grams || item.amount || 100)
@@ -79,8 +65,8 @@ export default function MenuBuilderPanel({ menuBuilder }: MenuBuilderPanelProps)
         return parseFloat(String(item[stdKey]));
       }
       const per100Val =
-        (item as Record<string, unknown>)[customKey] ||
-        (item as Record<string, unknown>)[`${String(stdKey)}_per_100g`];
+        (item as unknown as Record<string, unknown>)[customKey] ||
+        (item as unknown as Record<string, unknown>)[`${String(stdKey)}_per_100g`];
       if (per100Val !== undefined && per100Val !== null) {
         return (parseFloat(String(per100Val)) * amount) / 100;
       }

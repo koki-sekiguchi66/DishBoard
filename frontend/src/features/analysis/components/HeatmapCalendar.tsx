@@ -1,14 +1,3 @@
-/**
- * HeatmapCalendar — GitHub風の記録ヒートマップカレンダー
- *
- * 過去の食事記録状況を色の濃淡で可視化する。
- * GitHub の Contribution Graph を参考に、記録が多い日ほど濃い色で表示。
- *
- * 設計判断:
- *   - 外部ライブラリ不使用（SVG直接描画）。バンドルサイズ最小化のため
- *   - 12週間（約3ヶ月）分を表示。モバイル画面幅に収まるサイズ
- *   - 色はPrimary (rose) のOKLCH透明度で4段階（0, 0.2, 0.5, 0.8, 1.0）
- */
 import { useMemo } from "react";
 import { CalendarDays } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 interface Meal {
   id: number;
   record_date: string;
-  [key: string]: unknown;
 }
 
 interface HeatmapCalendarProps {

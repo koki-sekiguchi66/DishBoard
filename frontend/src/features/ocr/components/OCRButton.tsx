@@ -1,4 +1,3 @@
-// kilogram-app/src/features/ocr/components/OCRButton.tsx
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Camera } from 'lucide-react';
@@ -7,19 +6,9 @@ import CameraCapture from './CameraCapture';
 import ImageCropModal from './ImageCropModal';
 import OCRResultModal from './OCRResultModal';
 import { ocrApi } from '../api/ocrApi';
+import type { FoodSelectionItem } from '@/types';
 
-/**
- * OCRボタンコンポーネント
- *
- * ワークフロー:
- * 1. カメラ起動
- * 2. 撮影
- * 3. トリミング画面（新規）
- * 4. OCR処理
- * 5. 結果確認
- * 6. メニューに追加
- */
-const OCRButton = ({ onNutritionDetected }: { onNutritionDetected: (item: Record<string, unknown>) => void }) => {
+const OCRButton = ({ onNutritionDetected }: { onNutritionDetected: (item: FoodSelectionItem) => void }) => {
   const [showCamera, setShowCamera] = useState(false);
   const [showCrop, setShowCrop] = useState(false);
   const [showResult, setShowResult] = useState(false);
@@ -27,67 +16,34 @@ const OCRButton = ({ onNutritionDetected }: { onNutritionDetected: (item: Record
   const [isProcessing, setIsProcessing] = useState(false);
   const [ocrResult, setOcrResult] = useState(null);
 
-  /**
-   * カメラで撮影完了
-   */
   const handleCapture = (imageBlob: Blob) => {
-    console.log('=== 撮影完了 ===');
-    console.log('撮影Blob:', {
-      size: imageBlob.size,
-      type: imageBlob.type,
-    });
-
     setCapturedImage(imageBlob);
-    setShowCrop(true);  // トリミング画面を表示
+    setShowCrop(true);
   };
 
-  /**
-   * トリミング完了 → OCR処理開始
-   */
   const handleCrop = async (croppedBlob: Blob) => {
-    console.log('=== トリミング完了 → OCR処理開始 ===');
-    console.log('トリミングBlob:', {
-      size: croppedBlob.size,
-      type: croppedBlob.type,
-    });
-
     setIsProcessing(true);
 
     try {
-      // Blobが有効か確認
       if (!croppedBlob || croppedBlob.size === 0) {
         throw new Error('無効な画像データです');
       }
 
-      // 画像ファイルに変換
-      const timestamp = Date.now();
       const imageFile = new File(
         [croppedBlob],
-        `nutrition-label-${timestamp}.jpg`,
+        `nutrition-label-${Date.now()}.jpg`,
         { type: 'image/jpeg' }
       );
 
-      console.log('作成したFile:', {
-        name: imageFile.name,
-        size: imageFile.size,
-        type: imageFile.type,
-      });
-
       toast.loading('画像を解析中...', { id: 'ocr-processing' });
 
-      // OCR処理を実行
-      console.log('APIリクエスト送信開始...');
       const result = await ocrApi.processNutritionLabel(imageFile);
-
-      console.log('APIレスポンス受信:', result);
 
       toast.dismiss('ocr-processing');
 
       if (result.success) {
-        console.log('✓ OCR成功:', result.nutrition);
         toast.success('栄養素情報を認識しました！');
       } else {
-        console.warn('⚠ OCR部分的失敗:', result.error);
         toast.warning('一部の情報を認識できませんでした');
       }
 
@@ -95,13 +51,7 @@ const OCRButton = ({ onNutritionDetected }: { onNutritionDetected: (item: Record
       setShowResult(true);
 
     } catch (error: unknown) {
-      console.error('❌ OCRエラー:', error);
       const axiosError = error as { response?: { status?: number; data?: unknown }; message?: string };
-      console.error('エラー詳細:', {
-        message: axiosError.message,
-        response: axiosError.response?.data,
-        status: axiosError.response?.status,
-      });
 
       toast.dismiss('ocr-processing');
 
@@ -116,17 +66,10 @@ const OCRButton = ({ onNutritionDetected }: { onNutritionDetected: (item: Record
       }
     } finally {
       setIsProcessing(false);
-      console.log('=== OCR処理終了 ===');
     }
   };
 
-  /**
-   * OCR結果確認 → メニューに追加
-   */
   const handleConfirm = (nutritionData: Record<string, number>) => {
-    console.log('確認された栄養データ:', nutritionData);
-
-    // メニューに追加（100gあたりのデータとして扱う）
     const menuItem = {
       item_type: 'standard',
       item_id: 0,
@@ -146,10 +89,8 @@ const OCRButton = ({ onNutritionDetected }: { onNutritionDetected: (item: Record
       vitamin_c: nutritionData.vitamin_c || 0,
     };
 
-    console.log('メニューに追加:', menuItem);
     onNutritionDetected(menuItem);
 
-    // クリーンアップ
     if (capturedImage) {
       URL.revokeObjectURL(URL.createObjectURL(capturedImage));
       setCapturedImage(null);
@@ -163,10 +104,7 @@ const OCRButton = ({ onNutritionDetected }: { onNutritionDetected: (item: Record
     <>
       <Button
         variant="outline"
-        onClick={() => {
-          console.log('カメラを起動');
-          setShowCamera(true);
-        }}
+        onClick={() => setShowCamera(true)}
         disabled={isProcessing}
         className="w-full"
       >
@@ -183,22 +121,16 @@ const OCRButton = ({ onNutritionDetected }: { onNutritionDetected: (item: Record
         )}
       </Button>
 
-      {/* ステップ1: カメラ撮影 */}
       <CameraCapture
         show={showCamera}
-        onClose={() => {
-          console.log('カメラを閉じる');
-          setShowCamera(false);
-        }}
+        onClose={() => setShowCamera(false)}
         onCapture={handleCapture}
       />
 
-      {/* ステップ2: トリミング */}
       <ImageCropModal
         show={showCrop}
         imageBlob={capturedImage}
         onClose={() => {
-          console.log('トリミング画面を閉じる');
           setShowCrop(false);
           if (capturedImage) {
             URL.revokeObjectURL(URL.createObjectURL(capturedImage));
@@ -208,13 +140,9 @@ const OCRButton = ({ onNutritionDetected }: { onNutritionDetected: (item: Record
         onCrop={handleCrop}
       />
 
-      {/* ステップ3: OCR結果確認 */}
       <OCRResultModal
         show={showResult}
-        onClose={() => {
-          console.log('結果モーダルを閉じる');
-          setShowResult(false);
-        }}
+        onClose={() => setShowResult(false)}
         ocrResult={ocrResult}
         onConfirm={handleConfirm}
       />

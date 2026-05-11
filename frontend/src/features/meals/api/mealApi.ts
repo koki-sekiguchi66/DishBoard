@@ -1,8 +1,3 @@
-/**
- * 食事記録API クライアント（TypeScript版）
- *
- * Phase 3: JS→TS移行。型定義追加のみ、ロジック変更なし。
- */
 import { apiClient } from "@/lib/axios";
 import type {
   MealRecord,

@@ -20,13 +20,10 @@ class MealRecord(models.Model):
     meal_timing = models.CharField(max_length=10, choices=MEAL_TIMING_CHOICES, verbose_name='食事タイミング')
     meal_name = models.CharField(max_length=100, verbose_name='食事名')
 
-    # 基本栄養情報
     calories = models.FloatField(default=0.0, verbose_name='カロリー(kcal)')
     protein = models.FloatField(default=0.0, verbose_name="タンパク質(g)")
     fat = models.FloatField(default=0.0, verbose_name="脂質(g)")
     carbohydrates = models.FloatField(default=0.0, verbose_name="炭水化物(g)")
-
-    # 詳細栄養情報
     dietary_fiber = models.FloatField(default=0.0, verbose_name="食物繊維(g)")
     sodium = models.FloatField(default=0.0, verbose_name="ナトリウム(mg)")
     calcium = models.FloatField(default=0.0, verbose_name="カルシウム(mg)")
@@ -53,10 +50,8 @@ class MealRecord(models.Model):
         ordering = ['-record_date', '-created_at']
 
 class MealRecordItem(models.Model):
-    """
-    食事記録に含まれる個別の食品アイテム
-    """
-    
+    """食事記録の明細行。栄養素は記録時点のスナップショットとして保持する。"""
+
     ITEM_TYPE_CHOICES = [
         ('standard', '標準食品'),
         ('custom', 'カスタム食品'),
@@ -69,7 +64,6 @@ class MealRecordItem(models.Model):
         related_name='items',
         verbose_name='食事記録'
     )
-    
 
     item_type = models.CharField(
         max_length=20, 
@@ -81,8 +75,6 @@ class MealRecordItem(models.Model):
         verbose_name='アイテムID',
         db_index=True
     )
-    
-    # 保存時点の値を保持
     item_name = models.CharField(
         max_length=200, 
         verbose_name='アイテム名'
@@ -92,11 +84,9 @@ class MealRecordItem(models.Model):
         verbose_name='分量(g)'
     )
     display_order = models.IntegerField(
-        default=0, 
+        default=0,
         verbose_name='表示順序'
     )
-    
-    # 栄養素のスナップショット
     calories = models.FloatField(default=0, verbose_name='エネルギー(kcal)')
     protein = models.FloatField(default=0, verbose_name='タンパク質(g)')
     fat = models.FloatField(default=0, verbose_name='脂質(g)')
@@ -157,8 +147,6 @@ class StandardFood(models.Model):
     food_number = models.CharField(max_length=10, unique=True, verbose_name="食品番号")
     name = models.CharField(max_length=100, verbose_name="食品名", db_index=True)
     category = models.CharField(max_length=50, verbose_name="分類", db_index=True)
-    
-    # 100gあたりの栄養成分
     calories_per_100g = models.FloatField(verbose_name="エネルギー(kcal)")
     protein_per_100g = models.FloatField(verbose_name="たんぱく質(g)")
     fat_per_100g = models.FloatField(verbose_name="脂質(g)")
@@ -191,8 +179,6 @@ class CustomFood(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100, db_index=True)
-    
-    # 100gあたりの栄養成分
     calories_per_100g = models.FloatField(verbose_name="エネルギー(kcal)")
     protein_per_100g = models.FloatField(verbose_name="たんぱく質(g)")
     fat_per_100g = models.FloatField(verbose_name="脂質(g)")
@@ -242,8 +228,6 @@ class CafeteriaMenu(models.Model):
     menu_id = models.CharField(max_length=20, unique=True, verbose_name='メニューID')
     name = models.CharField(max_length=200, verbose_name='メニュー名', db_index=True)
     category = models.CharField(max_length=20, choices=MENU_CATEGORY, verbose_name='カテゴリー', db_index=True)
-    
-    # 栄養成分
     calories = models.FloatField(verbose_name='エネルギー(kcal)')
     protein = models.FloatField(verbose_name='タンパク質(g)')
     fat = models.FloatField(verbose_name='脂質(g)')
@@ -278,8 +262,6 @@ class CustomMenu(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='ユーザー')
     name = models.CharField(max_length=100, verbose_name='メニュー名', db_index=True)
     description = models.TextField(blank=True, verbose_name='説明')
-    
-    # 合計の栄養素を事前計算し更新
     total_calories = models.FloatField(default=0, verbose_name='合計カロリー(kcal)')
     total_protein = models.FloatField(default=0, verbose_name='合計タンパク質(g)')
     total_fat = models.FloatField(default=0, verbose_name='合計脂質(g)')
@@ -309,13 +291,9 @@ class CustomMenu(models.Model):
         return f"{self.user.username} - {self.name}"
     
     def calculate_totals(self):
-        """
-        メニューアイテムから合計栄養素を計算
-        集計クエリを1回のみ実行
-        結果をモデルフィールドにキャッシュ
-        """
+        """items の集計クエリを1回実行してフィールドを更新する。"""
         from django.db.models import Sum
-        
+
         totals = self.items.aggregate(
             total_calories=Sum('calories'),
             total_protein=Sum('protein'),
@@ -330,8 +308,6 @@ class CustomMenu(models.Model):
             total_vitamin_b2=Sum('vitamin_b2'),
             total_vitamin_c=Sum('vitamin_c'),
         )
-        
-        # None値を0に変換して設定
         for key, value in totals.items():
             setattr(self, key, value or 0)
 

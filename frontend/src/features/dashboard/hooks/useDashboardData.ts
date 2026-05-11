@@ -1,15 +1,3 @@
-/**
- * useDashboardData — ダッシュボードデータ管理フック（TypeScript版）
- *
- * Phase 3: JS→TS移行。
- * - 型定義追加（MealRecord, WeightRecord, DailySummary）
- * - ロジック変更なし（Fix #3 の stale closure 対策は維持）
- *
- * データフロー:
- *   マウント → fetchAll（meals + weights + summary を並列取得）
- *   日付変更 → updateForDate（summary 再取得 + allMeals から日付フィルタ）
- *   CRUD操作 → handler が allMeals state + ref を同期更新 → summary 再取得
- */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { mealApi } from "@/features/meals/api/mealApi";
 import { weightApi } from "@/features/weights/api/weightApi";
@@ -71,7 +59,6 @@ export const useDashboardData = (initialDate: string) => {
     []
   );
 
-  // ── 初回ロード ──
   useEffect(() => {
     const fetchAll = async () => {
       setLoading(true);
@@ -100,7 +87,6 @@ export const useDashboardData = (initialDate: string) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── 日付変更時 ──
   useEffect(() => {
     if (!isInitialLoadDone.current) return;
 
@@ -117,27 +103,21 @@ export const useDashboardData = (initialDate: string) => {
     updateForDate();
   }, [selectedDate, filterMealsByDate]);
 
-  // --- ヘルパー ---
-
   const handleDateChange = useCallback((newDate: string) => {
     setSelectedDate(newDate);
   }, []);
 
-  /** メッセージを表示し、5秒後に自動消去 */
   const showMessage = useCallback((msg: string) => {
     setMessage(msg);
     setTimeout(() => setMessage(""), 5000);
   }, []);
 
-  /** サマリーを再取得（複数ハンドラから共通利用） */
   const refreshSummary = useCallback((date: string) => {
     mealApi
       .getDailySummary(date)
       .then((data) => setDailySummary(data.nutrition_summary))
       .catch((err) => console.error("Failed to refresh summary", err));
   }, []);
-
-  // --- CRUD ハンドラ ---
 
   const handleMealCreated = useCallback(
     (newMeal: MealRecord) => {

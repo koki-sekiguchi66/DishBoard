@@ -38,7 +38,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return user
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    """ユーザープロフィール取得用（Phase 4.5）。読み取り専用。"""
+    """ユーザープロフィール取得用。読み取り専用。"""
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'date_joined']
