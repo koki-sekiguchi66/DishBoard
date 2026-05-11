@@ -65,7 +65,7 @@ export function AppShell({
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background text-foreground">
       <Header onMenuOpen={() => setSidebarOpen(true)} />
       <Sidebar
         open={sidebarOpen}
