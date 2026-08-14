@@ -40,7 +40,7 @@ describe("WeightForm コンポーネント", () => {
   it("体重記録を正常に作成", async () => {
     const user = userEvent.setup();
     const created = createMockWeight();
-    weightApi.createWeight.mockResolvedValue(created);
+    vi.mocked(weightApi.createWeight).mockResolvedValue(created);
 
     render(<WeightForm onWeightCreated={mockOnWeightCreated} />);
 
@@ -57,7 +57,7 @@ describe("WeightForm コンポーネント", () => {
 
   it("API失敗時にエラーメッセージが表示", async () => {
     const user = userEvent.setup();
-    weightApi.createWeight.mockRejectedValue(new Error("Server Error"));
+    vi.mocked(weightApi.createWeight).mockRejectedValue(new Error("Server Error"));
 
     render(<WeightForm onWeightCreated={mockOnWeightCreated} />);
 

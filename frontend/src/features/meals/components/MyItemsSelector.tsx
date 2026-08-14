@@ -4,13 +4,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import type { CustomFood } from '@/types';
+import type { CustomFood, FoodSelectionItem } from '@/types';
 import { mealApi } from '../api/mealApi';
 import { customFoodApi } from '@/features/customFoods/api/customFoodApi';
 import CustomFoodFormModal from '@/features/customFoods/components/CustomFoodFormModal';
 import { EditCustomFoodModal } from '@/features/customFoods';
 
-const MyItemsSelector = ({ onItemSelected }: { onItemSelected: (item: Record<string, unknown>) => void }) => {
+const MyItemsSelector = ({ onItemSelected }: { onItemSelected: (item: FoodSelectionItem) => void }) => {
   const [items, setItems] = useState<CustomFood[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -106,6 +106,7 @@ const MyItemsSelector = ({ onItemSelected }: { onItemSelected: (item: Record<str
                 className="flex justify-between items-center px-2 py-2 cursor-pointer hover:bg-muted"
                 onClick={() => onItemSelected({
                   ...item,
+                  item_name: item.name,
                   item_type: 'custom',
                   amount: 100
                 })}

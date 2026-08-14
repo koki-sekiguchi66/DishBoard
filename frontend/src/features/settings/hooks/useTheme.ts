@@ -2,7 +2,7 @@
  * useTheme — ダーク/ライトテーマ切替フック（Phase 5 課題②）
  *
  * 設計判断:
- *   - localStorage に "dishboard-theme" キーで永続化（useGoalSettings と命名規則統一）
+ *   - localStorage に "dishboard-theme-v2" キーで永続化（useGoalSettings と命名規則統一）
  *   - デフォルトは "dark"（既存 UX を変えない）
  *   - useEffect で documentElement.classList を更新（light クラスの付与/除去）
  *   - index.html の inline script でマウント前に同期初期化（ちらつき防止）
@@ -14,7 +14,7 @@ import { useState, useEffect, useCallback } from "react";
 export type Theme = "light" | "dark";
 
 /** localStorage キー */
-const STORAGE_KEY_THEME = "dishboard-theme";
+const STORAGE_KEY_THEME = "dishboard-theme-v2";
 
 interface UseThemeReturn {
   /** 現在のテーマ */

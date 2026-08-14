@@ -14,8 +14,7 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* 現在は既存 .jsx ファイルを許容 */
-    "allowJs": true,
+    "allowJs": false,
     "checkJs": false,
 
     /* 型定義 */
@@ -33,6 +32,6 @@
       "@lib/*": ["./src/lib/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "src/**/*.jsx"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist"]
 }

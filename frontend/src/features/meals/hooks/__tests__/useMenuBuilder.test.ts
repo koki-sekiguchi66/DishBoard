@@ -16,7 +16,7 @@ vi.mock("@/features/customMenus/api/customMenuApi", () => ({
   },
 }));
 
-vi.mock("react-hot-toast", () => ({
+vi.mock("sonner", () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
@@ -25,7 +25,7 @@ vi.mock("react-hot-toast", () => ({
 
 import { useMenuBuilder } from "@/features/meals/hooks/useMenuBuilder";
 import { mealApi } from "@/features/meals/api/mealApi";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 
 describe("useMenuBuilder フック", () => {
   const mockOnMealCreated = vi.fn();

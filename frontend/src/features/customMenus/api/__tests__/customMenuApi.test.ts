@@ -21,7 +21,7 @@ describe('customMenuApi', () => {
   describe('getMenus', () => {
     it('Myメニュー一覧を取得', async () => {
       const mockMenus = [createMockCustomMenu()];
-      apiClient.get.mockResolvedValue({ data: mockMenus });
+      (apiClient.get as ReturnType<typeof vi.fn>).mockResolvedValue({ data: mockMenus });
 
       const result = await customMenuApi.getMenus();
 
@@ -33,7 +33,7 @@ describe('customMenuApi', () => {
   describe('getMenuDetail', () => {
     it('指定IDのメニュー詳細を取得', async () => {
       const mockMenu = createMockCustomMenu({ id: 5 });
-      apiClient.get.mockResolvedValue({ data: mockMenu });
+      (apiClient.get as ReturnType<typeof vi.fn>).mockResolvedValue({ data: mockMenu });
 
       const result = await customMenuApi.getMenuDetail(5);
 
@@ -47,7 +47,7 @@ describe('customMenuApi', () => {
     it('Myメニューを作成', async () => {
       const newMenu = { name: '新メニュー', description: '', items: [] };
       const created = createMockCustomMenu({ ...newMenu, id: 10 });
-      apiClient.post.mockResolvedValue({ data: created });
+      (apiClient.post as ReturnType<typeof vi.fn>).mockResolvedValue({ data: created });
 
       const result = await customMenuApi.createMenu(newMenu);
 
@@ -59,7 +59,7 @@ describe('customMenuApi', () => {
   describe('updateMenu', () => {
     it('指定IDのメニューを更新', async () => {
       const updated = createMockCustomMenu({ id: 1, name: '更新メニュー' });
-      apiClient.put.mockResolvedValue({ data: updated });
+      (apiClient.put as ReturnType<typeof vi.fn>).mockResolvedValue({ data: updated });
 
       const result = await customMenuApi.updateMenu(1, { name: '更新メニュー' });
 
@@ -70,7 +70,7 @@ describe('customMenuApi', () => {
 
   describe('deleteMenu', () => {
     it('指定IDのメニューを削除', async () => {
-      apiClient.delete.mockResolvedValue({});
+      (apiClient.delete as ReturnType<typeof vi.fn>).mockResolvedValue({});
 
       await customMenuApi.deleteMenu(1);
 
@@ -80,7 +80,7 @@ describe('customMenuApi', () => {
 
   describe('エラーハンドリング', () => {
     it('APIエラー時にPromiseがreject', async () => {
-      apiClient.get.mockRejectedValue(new Error('Network Error'));
+      (apiClient.get as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network Error'));
 
       await expect(customMenuApi.getMenus()).rejects.toThrow('Network Error');
     });

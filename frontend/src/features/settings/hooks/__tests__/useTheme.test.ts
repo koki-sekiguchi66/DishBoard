@@ -25,19 +25,19 @@ describe("useTheme フック", () => {
     });
 
     it('localStorage に "light" がある場合 light を返す', () => {
-      localStorage.setItem("dishboard-theme", "light");
+      localStorage.setItem("dishboard-theme-v2", "light");
       const { result } = renderHook(() => useTheme());
       expect(result.current.theme).toBe("light");
     });
 
     it('localStorage に "dark" がある場合 dark を返す', () => {
-      localStorage.setItem("dishboard-theme", "dark");
+      localStorage.setItem("dishboard-theme-v2", "dark");
       const { result } = renderHook(() => useTheme());
       expect(result.current.theme).toBe("dark");
     });
 
     it("localStorage に不正値がある場合 dark にフォールバック", () => {
-      localStorage.setItem("dishboard-theme", "invalid-theme");
+      localStorage.setItem("dishboard-theme-v2", "invalid-theme");
       const { result } = renderHook(() => useTheme());
       expect(result.current.theme).toBe("dark");
     });
@@ -62,7 +62,7 @@ describe("useTheme フック", () => {
       });
 
       expect(localStorage.setItem).toHaveBeenCalledWith(
-        "dishboard-theme",
+        "dishboard-theme-v2",
         "light"
       );
     });

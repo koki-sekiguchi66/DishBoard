@@ -40,7 +40,7 @@ describe("weightApi", () => {
 
   describe("createWeight", () => {
     it("体重記録を作成", async () => {
-      const weightData = { record_date: "2025-01-15", weight: "65.5" };
+      const weightData = { record_date: "2025-01-15", weight: 65.5 };
       const created = createMockWeight(weightData);
       (apiClient.post as ReturnType<typeof vi.fn>).mockResolvedValue({
         data: created,

@@ -9,9 +9,9 @@ export interface Meal {
 }
 
 export interface DailySummary {
-  total_calories: number;
-  total_protein: number;
-  total_fat: number;
-  total_carbohydrates: number;
-  meal_count: number;
+  total_calories?: number;
+  total_protein?: number;
+  total_fat?: number;
+  total_carbohydrates?: number;
+  meal_count?: number;
 }
