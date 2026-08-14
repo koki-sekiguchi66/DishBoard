@@ -1,12 +1,13 @@
 """
-栄養成分表示OCRプロセッサ（Azure AI Vision 版）
+栄養成分表示ラベルの OCR パイプライン。
 
-処理フロー:
 1. Azure AI Vision Read API で画像からテキスト行を抽出（位置情報付き）
-2. Azure が返す行を上→下・左→右にソートして結合
-3. NutritionExtractor で栄養素を抽出（既存ロジック再利用）
-4. OCRPostProcessor で誤認識補正（既存ロジック再利用）
-5. NutritionValidator で整合性検証（既存ロジック再利用）
+2. 行を上→下・左→右の読み順に並べ替える
+3. NutritionExtractor が正規表現で栄養素を抽出する
+4. OCRPostProcessor が誤認識を補正する
+5. NutritionValidator が整合性を検証し、警告を返す
+
+抽出結果は確定値ではなく入力の下書きとして扱う。最終的な確認はユーザーが行う。
 """
 import os
 import re

@@ -1,7 +1,6 @@
 /**
- * MenuPreviewPanel — メニュービルダー右パネル（Tailwind + shadcn/ui版）
+ * MenuPreviewPanel — メニュービルダー右パネル
  *
- * Phase 3: Bootstrap Card/Form/Collapse → shadcn/ui Card + Tailwind。
  * 現在のメニューリスト + 合計栄養素 + 保存オプション。
  */
 import {

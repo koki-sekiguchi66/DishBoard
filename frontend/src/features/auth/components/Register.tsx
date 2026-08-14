@@ -1,16 +1,11 @@
 /**
- * Register — ユーザー登録フォーム（Phase 4 Tailwind + shadcn/ui 版）
+ * Register — ユーザー登録フォーム
  *
- * Phase 4 変更点:
- *   - JSX → TSX
- *   - react-bootstrap Form/Button/Alert/Spinner → shadcn/ui Input/Label/Button/Alert
- *   - Bootstrap Icons → lucide-react
- *
- * Fix #9 維持: トークン永続化の責務は App.tsx に一元化
+ * トークン永続化の責務は App.tsx に一元化している。
  *   登録成功後の自動ログインで取得したトークンを onRegisterSuccess 経由で
  *   親に渡すのみ。localStorage への保存は行わない。
  *
- * テスト互換性のため、placeholder/role/text は旧版と完全一致:
+ * テストが placeholder / role / 文言で要素を特定している。変更するとテストが落ちる:
  *   - placeholder: "ユーザー名を入力" "メールアドレスを入力"
  *                  "パスワードを入力" "パスワードを再入力"
  *   - heading: "アカウント作成"
@@ -76,14 +71,13 @@ const Register = ({ onRegisterSuccess }: RegisterProps) => {
         confirm_password: formData.confirm_password,
       });
 
-      // 登録成功後に自動ログイン
       const loginResponse = await apiClient.post("/login/", {
         username: formData.username,
         password: formData.password,
       });
 
       if (loginResponse.data.token) {
-        // Fix #9: localStorage への保存は App.tsx に委譲
+        // localStorage への保存は App.tsx に委譲
         onRegisterSuccess(loginResponse.data.token);
       }
     } catch (error: unknown) {

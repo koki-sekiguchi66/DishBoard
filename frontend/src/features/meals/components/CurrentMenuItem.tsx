@@ -13,18 +13,7 @@ interface MenuItem {
   carbohydrates: number;
 }
 
-/**
- * 現在のメニューアイテム
- *
- * 役割:
- * - 1つのアイテムを表示
- * - 分量の編集機能
- * - 削除ボタン
- *
- * 設計原則:
- * - インライン編集（クリックで編集モード）
- * - ドラッグ&ドロップ対応（将来的に）
- */
+/** メニュー内の1アイテム。分量はクリックでインライン編集する。 */
 const CurrentMenuItem = ({ item, index, onAmountChange, onRemove }: {
   item: MenuItem;
   index: number;
@@ -34,7 +23,6 @@ const CurrentMenuItem = ({ item, index, onAmountChange, onRemove }: {
   const [isEditing, setIsEditing] = useState(false);
   const [amount, setAmount] = useState(item.amount_grams);
 
-  // 編集完了
   const handleSaveAmount = () => {
     if (amount > 0) {
       onAmountChange(amount);
@@ -42,7 +30,6 @@ const CurrentMenuItem = ({ item, index, onAmountChange, onRemove }: {
     }
   };
 
-  // Enterキーで保存
   const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSaveAmount();

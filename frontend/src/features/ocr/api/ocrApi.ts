@@ -1,4 +1,3 @@
-// kilogram-app/src/features/ocr/api/ocrApi.ts
 import { apiClient } from '@/lib/axios';
 import { isAxiosError } from 'axios';
 

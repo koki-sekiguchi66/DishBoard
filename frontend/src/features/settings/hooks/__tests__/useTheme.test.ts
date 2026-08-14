@@ -1,5 +1,5 @@
 /**
- * useTheme テスト（Phase 5 課題②）
+ * useTheme テスト
  *
  * 検証項目:
  *   - 初期化: localStorage 空 → dark / "light" 保存済 → light / 不正値 → dark

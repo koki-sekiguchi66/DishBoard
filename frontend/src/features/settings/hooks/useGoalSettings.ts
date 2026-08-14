@@ -1,11 +1,10 @@
 /**
  * useGoalSettings — 栄養目標値の永続化フック
  *
- * Phase 4 で導入。GoalSettings コンポーネントと、目標値を表示する
- * Dashboard / RecordTab / PFCSummary 側の双方から呼び出される。
+ * GoalSettings と、目標値を表示する Dashboard / RecordTab / PFCSummary の双方から呼ばれる。
  *
  * 設計判断:
- *   - localStorage に直接アクセス（バックエンド永続化は Phase 4.5 以降）
+ *   - localStorage に直接アクセス（サーバー側への永続化は未実装）
  *   - useState の lazy initializer で初回マウント時のみ I/O
  *   - 部分破損データへの防御（一部のキーだけ正常な JSON でもフォールバック）
  *   - localStorage.setItem の例外（容量超過等）は握り潰す
@@ -16,8 +15,6 @@
  *   Dashboard を介して props 伝搬可能で、Context のオーバーヘッドは不要（YAGNI）。
  *   ただし、Dashboard と Settings で別インスタンスのフックが動くため、
  *   片方の更新が他方に伝播しない点には注意（同一画面で同時表示しないため問題なし）。
- *
- * テスト: __tests__/useGoalSettings.test.ts 参照
  */
 import { useState, useCallback } from "react";
 import {

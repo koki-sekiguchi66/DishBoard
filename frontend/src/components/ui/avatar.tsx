@@ -5,7 +5,7 @@
  * ProfileSection でユーザーアイコン表示に使用。
  *
  * 構成: Avatar (Root) + AvatarImage (画像) + AvatarFallback (画像なし時のフォールバック)
- * Phase 4 では画像アップロード未実装のため、Fallback のみ使用される想定。
+ * 画像アップロードは未実装のため、現状は Fallback のみが使われる。
  */
 import * as React from "react";
 import * as AvatarPrimitive from "@radix-ui/react-avatar";

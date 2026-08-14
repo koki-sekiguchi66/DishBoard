@@ -1,8 +1,5 @@
 /**
- * apiClient テスト（Phase 5 課題⑥-a TypeScript 化）
- *
- * 旧 axios.test.js を TS 化。テストロジック変更なし。
- * delete window.location → Object.defineProperty に統一（strict 対応）
+ * apiClient テスト
  */
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 

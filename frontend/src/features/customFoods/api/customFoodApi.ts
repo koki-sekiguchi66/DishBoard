@@ -1,7 +1,5 @@
 /**
- * カスタム食品（Myアイテム）API（TypeScript版）
- *
- * Phase 3: JS→TS移行。型定義追加のみ、ロジック変更なし。
+ * カスタム食品（Myアイテム）API
  */
 import { apiClient } from "@/lib/axios";
 import type { CustomFood } from "@/types";

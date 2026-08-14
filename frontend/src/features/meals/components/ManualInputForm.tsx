@@ -1,7 +1,6 @@
 /**
- * ManualInputForm — 手動栄養素入力フォーム（Tailwind + shadcn/ui版）
+ * ManualInputForm — 手動栄養素入力フォーム
  *
- * Phase 3: Bootstrap Form/Row/Col → shadcn/ui Input + Tailwind grid。
  * 基本4栄養素 + 詳細8栄養素の折りたたみ表示。
  */
 import { useState, type ChangeEvent } from "react";

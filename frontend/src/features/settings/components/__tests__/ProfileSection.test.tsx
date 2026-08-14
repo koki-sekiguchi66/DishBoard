@@ -1,5 +1,5 @@
 /**
- * ProfileSection コンポーネントのテスト（Phase 4.5）
+ * ProfileSection コンポーネントのテスト
  *
  * 3状態を検証: loading / error / success
  */

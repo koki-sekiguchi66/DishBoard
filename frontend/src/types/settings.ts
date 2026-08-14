@@ -1,7 +1,7 @@
 /**
  * settings 関連の共通型定義
  *
- * Phase 4 で導入。NutritionGoals は localStorage 経由で永続化され、
+ * NutritionGoals は localStorage 経由で永続化され、
  * Dashboard → RecordTab → PFCSummary に props 伝搬される。
  *
  * 設計判断:

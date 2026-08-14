@@ -19,7 +19,6 @@ const MyItemsSelector = ({ onItemSelected }: { onItemSelected: (item: FoodSelect
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<CustomFood | null>(null);
 
-  // データ取得
   const fetchCustomFoods = async () => {
     setLoading(true);
     try {
@@ -37,7 +36,6 @@ const MyItemsSelector = ({ onItemSelected }: { onItemSelected: (item: FoodSelect
     fetchCustomFoods();
   }, []);
 
-  // 削除処理
   const handleDelete = async (e: React.MouseEvent, item: CustomFood) => {
     e.stopPropagation();
     if (!window.confirm(`「${item.name}」を削除してもよろしいですか？`)) return;
@@ -52,14 +50,12 @@ const MyItemsSelector = ({ onItemSelected }: { onItemSelected: (item: FoodSelect
     }
   };
 
-  // 編集モーダル
   const handleEdit = (e: React.MouseEvent, item: CustomFood) => {
     e.stopPropagation();
     setSelectedItem(item);
     setShowEditModal(true);
   };
 
-  // 作成・編集後のリロード
   const handleSuccess = () => {
     fetchCustomFoods();
   };

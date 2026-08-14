@@ -1,8 +1,5 @@
 /**
- * テスト用モックファクトリ（Phase 5 課題⑥-a TypeScript 化）
- *
- * .js → .ts。各ファクトリの戻り値型を厳密化。
- * 既存ドメイン型（@/types）を可能な限み再利用。
+ * テスト用モックファクトリ
  */
 import { vi, type Mock } from "vitest";
 import type {

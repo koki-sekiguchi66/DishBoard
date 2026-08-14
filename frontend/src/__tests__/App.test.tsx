@@ -1,7 +1,6 @@
 /**
- * App コンポーネントの統合テスト（Phase 4 TSX版）
+ * App コンポーネントの統合テスト
  *
- * 旧 App.test.jsx を TS 化。Login/Register/Dashboard をモックし、
  * App 本体の責務（認証状態管理、ビュー切り替え、トークン永続化）のみ検証。
  *
  * Toaster (sonner) は副作用ありで邪魔になるためモック。

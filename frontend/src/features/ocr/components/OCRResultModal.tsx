@@ -1,4 +1,3 @@
-// kilogram-app/src/features/ocr/components/OCRResultModal.tsx
 import { useState, useEffect, type ChangeEvent } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -70,7 +69,6 @@ const OCRResultModal = ({ show, onClose, ocrResult, onConfirm }: {
   const handleConfirm = () => {
     console.log('確認ボタン押下:', nutritionData);
 
-    // 基本栄養素が1つでも入力されているか確認
     const hasBasicNutrient =
       nutritionData.calories > 0 ||
       nutritionData.protein > 0 ||
@@ -87,7 +85,6 @@ const OCRResultModal = ({ show, onClose, ocrResult, onConfirm }: {
 
   if (!ocrResult) return null;
 
-  // 検出された基本栄養素の数
   const detectedBasicCount = [
     nutritionData.calories,
     nutritionData.protein,
@@ -95,7 +92,6 @@ const OCRResultModal = ({ show, onClose, ocrResult, onConfirm }: {
     nutritionData.carbohydrates,
   ].filter(v => v > 0).length;
 
-  // 検出された詳細栄養素の数
   const detectedDetailCount = [
     nutritionData.dietary_fiber,
     nutritionData.sodium,

@@ -1,7 +1,6 @@
 /**
- * CafeteriaSelector — 食堂メニュー選択コンポーネント（Tailwind + shadcn/ui版）
+ * CafeteriaSelector — 食堂メニュー選択コンポーネント
  *
- * Phase 3: Bootstrap Card/Badge/Button → Tailwind + shadcn/ui。
  * 食堂メニュー一覧取得 → カテゴリフィルタ → クリックでメニュー選択。
  */
 import { useState, useEffect, useMemo } from "react";

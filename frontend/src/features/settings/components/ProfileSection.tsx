@@ -1,5 +1,5 @@
 /**
- * ProfileSection — プロフィール表示セクション（Phase 4.5 本実装）
+ * ProfileSection — プロフィール表示セクション
  *
  * /api/profile/ から取得した username / email を表示する。
  * 読み取り専用。編集機能は将来実装。

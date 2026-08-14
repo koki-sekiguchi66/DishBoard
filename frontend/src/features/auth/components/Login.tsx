@@ -1,17 +1,11 @@
 /**
- * Login — ログインフォーム（Phase 4 Tailwind + shadcn/ui 版）
+ * Login — ログインフォーム
  *
- * Phase 4 変更点:
- *   - JSX → TSX
- *   - react-bootstrap Form/Button/Alert/Spinner → shadcn/ui Input/Label/Button/Alert
- *   - Bootstrap Icons → lucide-react
- *   - Spinner → Loader2 (animate-spin)
- *
- * Fix #9 維持: トークン永続化の責務は App.tsx に一元化
+ * トークン永続化の責務は App.tsx に一元化している。
  *   Login は「認証API呼び出し → 成功時にトークンを親に通知」のみ担当。
  *   localStorage への保存は App.tsx が一括管理する。
  *
- * テスト互換性のため、placeholder テキストは旧版と完全一致させる:
+ * テストが placeholder / role / 文言で要素を特定している。変更するとテストが落ちる:
  *   - "ユーザー名を入力" / "パスワードを入力"
  *   - heading の "ログイン"、button の "ログイン" / "ログイン中"
  */
@@ -53,7 +47,7 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
       const response = await apiClient.post("/login/", formData);
 
       if (response.data.token) {
-        // Fix #9: localStorage への保存は App.tsx に委譲
+        // localStorage への保存は App.tsx に委譲
         setMessage("ログインに成功しました！");
         onLoginSuccess(response.data.token);
       }

@@ -1,5 +1,4 @@
-# Generated manually for WeightRecord UniqueConstraint
-# 本番適用前に python manage.py makemigrations で再生成を推奨
+# 自動生成ではなく手書きのマイグレーション
 
 from django.db import migrations, models
 

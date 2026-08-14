@@ -1,7 +1,6 @@
 /**
- * FoodSearchInput — 食品検索 + 分量選択コンポーネント（Tailwind + shadcn/ui版）
+ * FoodSearchInput — 食品検索 + 分量選択コンポーネント
  *
- * Phase 3: Bootstrap Form/ListGroup/Card → shadcn/ui Input + Tailwind。
  * 2段階フロー:
  *   1. 検索モード: テキスト入力 → デバウンス検索 → 結果リスト表示
  *   2. 分量選択モード: 食品選択後に分量入力 → API栄養計算 → 追加
@@ -28,7 +27,6 @@ export default function FoodSearchInput({ onFoodSelected }: FoodSearchInputProps
   const [amount, setAmount] = useState(100);
   const [calculating, setCalculating] = useState(false);
 
-  // デバウンス検索
   useEffect(() => {
     if (query.length < 2) {
       setResults([]);

@@ -1,4 +1,3 @@
-// kilogram-app/src/features/ocr/components/CameraCapture.tsx
 import { useState, useRef, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,11 +6,8 @@ import { Loader2, Camera, AlertTriangle, Info } from 'lucide-react';
 import Webcam from 'react-webcam';
 
 /**
- * カメラキャプチャコンポーネント（シンプル版）
- *
- * 役割：
- * - カメラで撮影して全体画像を返すだけ
- * - トリミングは別コンポーネント（ImageCropModal）で行う
+ * カメラで撮影して画像全体を返す。
+ * 読み取り範囲のトリミングは ImageCropModal の責務。
  */
 const CameraCapture = ({ show, onClose, onCapture }: { show: boolean; onClose: () => void; onCapture: (blob: Blob) => void }) => {
   const [error, setError] = useState('');
@@ -19,7 +15,7 @@ const CameraCapture = ({ show, onClose, onCapture }: { show: boolean; onClose: (
 
   const webcamRef = useRef<Webcam>(null);
 
-  // 高解像度のビデオ設定（4K対応）
+  // OCR の精度は解像度に強く依存するため、取得できる最大解像度を要求する
   const videoConstraints = {
     width: { ideal: 3840 },
     height: { ideal: 2160 },
@@ -39,15 +35,11 @@ const CameraCapture = ({ show, onClose, onCapture }: { show: boolean; onClose: (
     setIsReady(false);
   }, []);
 
-  /**
-   * 撮影処理
-   */
   const handleCapture = useCallback(() => {
     if (!webcamRef.current) return;
 
     console.log('撮影開始');
 
-    // 最高品質でスクリーンショット取得
     const imageSrc = webcamRef.current.getScreenshot({
       width: 3840,
       height: 2160,
@@ -58,7 +50,6 @@ const CameraCapture = ({ show, onClose, onCapture }: { show: boolean; onClose: (
       return;
     }
 
-    // Base64からBlobに変換
     fetch(imageSrc)
       .then(res => res.blob())
       .then(blob => {

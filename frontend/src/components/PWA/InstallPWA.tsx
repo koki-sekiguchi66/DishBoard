@@ -1,16 +1,7 @@
 /**
- * InstallPWA — PWA インストール促進 + Service Worker 更新通知（Phase 4 TSX版）
+ * InstallPWA — PWA インストール促進 + Service Worker 更新通知
  *
- * Phase 4 変更点:
- *   - JSX → TSX
- *   - react-bootstrap Button/Toast/ToastContainer → shadcn/ui Button + sonner
- *   - インストール完了通知: react-bootstrap Toast → sonner toast.success()
- *   - 更新通知バナー: 自前 Tailwind 実装（位置固定、bg-primary）
- *   - Bootstrap Icons → lucide-react
- *
- * ロジック変更なし:
- *   - useRegisterSW フックは Phase 1 で導入済みの virtual:pwa-register/react から
- *   - beforeinstallprompt / appinstalled イベントハンドリングはそのまま
+ * Service Worker の更新検知は virtual:pwa-register/react の useRegisterSW を使う。
  *
  * 設計判断:
  *   - Toaster 自体は App.tsx で配置済み。ここでは toast() を呼ぶだけ
@@ -60,7 +51,6 @@ const InstallPWA = () => {
       setShowInstallButton(false);
       setDeferredPrompt(null);
 
-      // sonner で完了通知
       toast.success("インストール完了", {
         description: "DishBoardがホーム画面に追加されました！",
         icon: <CheckCircle className="h-4 w-4" />,

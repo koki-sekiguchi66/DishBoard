@@ -1,8 +1,7 @@
 /**
- * Login コンポーネントのテスト（Phase 4 TSX版）
+ * Login コンポーネントのテスト
  *
- * 旧 Login.test.jsx をそのまま TS 化。placeholder/role クエリは
- * Phase 4 の UI 移行後も互換性を保つよう Login.tsx 側で配慮済み。
+ * placeholder / role で要素を特定している。Login.tsx 側の文言と対応させること。
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -54,7 +53,7 @@ describe("Login コンポーネント", () => {
         username: "testuser",
         password: "password123",
       });
-      // Fix #9: localStorage.setItem はこのコンポーネントでは呼ばない
+      // localStorage への保存は App.tsx の責務。ここでは呼ばれない
       expect(mockOnLoginSuccess).toHaveBeenCalledWith("new-token-abc");
     });
   });

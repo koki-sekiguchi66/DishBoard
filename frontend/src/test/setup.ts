@@ -1,7 +1,5 @@
 /**
- * Vitest セットアップ（Phase 5 課題⑥-a TypeScript 化）
- *
- * .js → .ts。Object.defineProperty に統一（strict 対応）。
+ * Vitest セットアップ
  */
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";

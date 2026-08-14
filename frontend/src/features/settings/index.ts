@@ -1,5 +1,5 @@
 /**
- * settings feature バレルエクスポート（Phase 4.5 更新）
+ * settings feature バレルエクスポート
  */
 export { SettingsPage } from "./components/SettingsPage";
 export { ProfileSection } from "./components/ProfileSection";

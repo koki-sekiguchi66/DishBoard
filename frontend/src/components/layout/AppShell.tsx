@@ -1,16 +1,8 @@
 /**
- * AppShell — DishBoard アプリケーションシェル（Phase 1.5 更新版）
- *
- * Phase 1 → 1.5 の変更点:
- *   - BottomNav (4タブ) → Sidebar (3ページ) に変更
- *   - TabId → PageId に型名変更
- *   - cafeteria タブ廃止
- *   - `pb-20`（BottomNav用の下部余白）を削除
- *   - Header に onMenuOpen を渡してサイドバーの開閉を制御
- *   - ログアウトは Sidebar 内に移動
+ * AppShell — DishBoard アプリケーションシェル
  *
  * アーキテクチャ上の位置づけ:
- *   App.jsx (認証) → Dashboard.jsx → AppShell (レイアウト + ページルーティング)
+ *   App.tsx (認証) → Dashboard.tsx → AppShell (レイアウト + ページルーティング)
  *
  * 設計判断:
  *   React Router は導入せず、useState によるページ切り替えで SPA 感を実現。
@@ -21,13 +13,13 @@ import { Header } from "./Header";
 import { Sidebar, type PageId } from "./Sidebar";
 
 interface AppShellProps {
-  /** ログアウトハンドラー (App.jsx から渡される) */
+  /** ログアウトハンドラー（App.tsx から渡される） */
   onLogout: () => void;
   /** 記録ページのコンテンツ */
   recordContent: ReactNode;
-  /** 分析ページのコンテンツ (Phase 2) */
+  /** 分析ページのコンテンツ */
   analysisContent?: ReactNode;
-  /** 設定ページのコンテンツ (Phase 4) */
+  /** 設定ページのコンテンツ */
   settingsContent?: ReactNode;
 }
 

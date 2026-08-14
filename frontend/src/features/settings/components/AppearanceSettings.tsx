@@ -1,10 +1,5 @@
 /**
- * AppearanceSettings — 表示設定コンポーネント（Phase 5 課題② 本格実装）
- *
- * Phase 5 変更点:
- *   - useTheme フックと接続し、Switch を有効化
- *   - Badge「近日公開」を削除
- *   - テーマ状態に応じた説明文を動的表示
+ * AppearanceSettings — 表示設定コンポーネント
  */
 import { Palette } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

@@ -1,13 +1,8 @@
 /**
- * PFCSummary — PFC 栄養サマリーダッシュボード（Phase 4 拡張版）
- *
- * Phase 4 変更点:
- *   - `goals?: Partial<NutritionGoals>` props を追加（任意）
- *   - goals 指定時は「現在値 / 目標値」形式で表示
- *   - goals 未指定時は従来通り現在値のみ表示（後方互換）
+ * PFCSummary — PFC 栄養サマリーダッシュボード
  *
  * 設計判断:
- *   - goals は optional で後方互換を維持（既存テスト互換性）
+ *   - goals は optional。未指定なら現在値のみを表示する
  *   - 表示は控えめに: "1500/2000" の "/2000" 部分は小さい text-muted
  *   - 4カラムグリッドの幅は変えず、文字サイズで吸収
  */

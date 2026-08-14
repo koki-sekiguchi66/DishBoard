@@ -1,7 +1,5 @@
 /**
- * useDashboardData テスト（Phase 3 TypeScript版）
- *
- * 変更: .test.js → .test.ts。テストロジック変更なし。
+ * useDashboardData テスト
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";

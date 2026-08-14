@@ -5,7 +5,7 @@
  * 目標値が未設定の場合は一般的な成人の目安値（厚生労働省「日本人の食事摂取基準」参考）を使用。
  *
  * 設計判断:
- *   - 目標値はハードコーディングせず props で受け取る（Phase 4 の GoalSettings で動的変更）
+ *   - 目標値はハードコーディングせず props で受け取る（GoalSettings で変更できる）
  *   - デフォルト値は定数化し、マジックナンバーを排除
  */
 import { Flame, Beef, Droplets, Wheat } from "lucide-react";

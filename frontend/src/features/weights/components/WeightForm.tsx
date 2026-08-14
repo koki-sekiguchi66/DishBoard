@@ -1,8 +1,5 @@
 /**
- * WeightForm — 体重記録フォーム（Tailwind + shadcn/ui版）
- *
- * Phase 3: Bootstrap Form → shadcn/ui Input + Tailwind。
- * ロジック変更なし、UI層のみ移行。
+ * WeightForm — 体重記録フォーム
  */
 import { useState, type FormEvent, type ChangeEvent } from "react";
 import { Calendar, Scale, CheckCircle, Loader2, AlertTriangle } from "lucide-react";

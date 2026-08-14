@@ -1,7 +1,5 @@
 /**
- * CurrentMenuDisplay — メニュービルダー内のアイテムリスト（Tailwind版）
- *
- * Phase 3: Bootstrap ListGroup → Tailwind。
+ * CurrentMenuDisplay — メニュービルダー内のアイテムリスト
  */
 import { X } from "lucide-react";
 import type { MenuBuilderReturn } from "../hooks/useMenuBuilder";

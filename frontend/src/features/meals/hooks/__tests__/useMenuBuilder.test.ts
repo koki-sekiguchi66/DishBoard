@@ -1,5 +1,5 @@
 /**
- * useMenuBuilder テスト（Phase 3 TypeScript版）
+ * useMenuBuilder テスト
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";

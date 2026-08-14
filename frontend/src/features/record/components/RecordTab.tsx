@@ -1,10 +1,6 @@
 /**
  * RecordTab — 記録ページのプレゼンテーションコンポーネント
  *
- * Phase 4 変更点:
- *   - `goals?: Partial<NutritionGoals>` props を追加
- *   - PFCSummary に goals を伝搬（目標値表示）
- *
  * Dashboard → RecordTab → PFCSummary の3段 props drilling。
  * Context は導入せず、シンプルさを優先。
  */
@@ -21,7 +17,7 @@ interface RecordTabProps {
   onDateChange: (date: string) => void;
   meals: Meal[];
   dailySummary: DailySummary | null;
-  /** 栄養目標値（任意）。Phase 4 で追加。GoalSettings で設定された値が伝搬される */
+  /** 栄養目標値（任意）。GoalSettings で設定された値が伝搬される */
   goals?: Partial<NutritionGoals>;
   onMealEdit?: (meal: Meal) => void;
   onMealDelete?: (mealId: number) => void;
@@ -48,7 +44,7 @@ export function RecordTab({
       {/* キャラクター挨拶 */}
       <CharacterGreeting />
 
-      {/* PFCサマリー（Phase 4: goals を伝搬） */}
+      {/* PFCサマリー */}
       <PFCSummary
         calories={dailySummary?.total_calories ?? null}
         protein={dailySummary?.total_protein ?? null}

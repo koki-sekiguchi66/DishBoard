@@ -5,7 +5,11 @@ from ..models import StandardFood, CustomFood
 class NutritionCalculatorService:
     
     def search_foods(self, query):
-        """食品名で検索"""        
+        """食品名であいまい検索する。
+
+        トリグラム類似度で粗く候補を絞ってから、キーワードの部分一致で確定する2段構え。
+        1段目の閾値は足切りであってランキングではないため、意図的に緩くしている。
+        """        
         if not query:
             return []
         
@@ -44,7 +48,6 @@ class NutritionCalculatorService:
         """食品名の候補を取得（オートコンプリート用）"""
         suggestions = []
         
-        # 標準食品から候補取得
         standard_foods = StandardFood.objects.filter(
             name__icontains=query
         ).values('name').distinct()[:limit]
@@ -55,7 +58,7 @@ class NutritionCalculatorService:
         return suggestions
     
     def _get_nutrition_per_100g(self, food):
-        """100gあたりの栄養素を取得（内部メソッド）"""
+        """StandardFood / CustomFood の共通形式で 100g あたりの栄養素を返す。"""
         return {
             'calories': food.calories_per_100g,
             'protein': food.protein_per_100g,
@@ -86,7 +89,6 @@ class NutritionCalculatorService:
             nutrition_per_100g = self._get_nutrition_per_100g(food)
             multiplier = amount_grams / 100
             
-            # 各栄養素を量に応じて計算
             calculated_nutrition = {}
             for nutrient, value_per_100g in nutrition_per_100g.items():
                 calculated_nutrition[nutrient] = round(value_per_100g * multiplier, 2)
@@ -105,7 +107,6 @@ class NutritionCalculatorService:
             record_date=target_date
         )
         
-        # 栄養素の合計を初期化
         daily_total = {
             'calories': 0,
             'protein': 0,
@@ -121,7 +122,6 @@ class NutritionCalculatorService:
             'vitamin_c': 0,
         }
         
-        # 各食事の栄養素を合計
         for meal in meals:
             daily_total['calories'] += meal.calories
             daily_total['protein'] += meal.protein
@@ -136,7 +136,6 @@ class NutritionCalculatorService:
             daily_total['vitamin_b2'] += meal.vitamin_b2
             daily_total['vitamin_c'] += meal.vitamin_c
         
-        # 小数点以下2桁に丸める
         for key in daily_total:
             daily_total[key] = round(daily_total[key], 2)
         

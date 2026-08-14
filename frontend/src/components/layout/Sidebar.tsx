@@ -1,8 +1,6 @@
 /**
  * Sidebar — DishBoard サイドバーナビゲーション
  *
- * Phase 1.5: BottomNav (4タブ) → Sidebar (3ページ) への変更。
- *
  * 設計判断:
  *   - Claude スマホアプリのサイドバーを参考にした左スライドイン方式
  *   - shadcn/ui Sheet (side="left") でフォーカストラップ・Esc閉じ・オーバーレイを標準提供
@@ -22,7 +20,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
-/** ページ識別子。cafeteria は廃止 */
+/** ページ識別子 */
 export type PageId = "record" | "analysis" | "settings";
 
 interface SidebarProps {

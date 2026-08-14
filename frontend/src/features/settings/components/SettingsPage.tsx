@@ -1,5 +1,5 @@
 /**
- * SettingsPage — 設定ページコンテナ（Phase 4 新規）
+ * SettingsPage — 設定ページコンテナ
  *
  * サイドバーの「設定」から遷移するページ。
  * 上から順に: ProfileSection → GoalSettings → AppearanceSettings の3セクション構成。

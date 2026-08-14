@@ -1,8 +1,7 @@
 /**
- * Register コンポーネントのテスト（Phase 4 TSX版）
+ * Register コンポーネントのテスト
  *
- * 旧 Register.test.jsx をそのまま TS 化。placeholder/role クエリは
- * Phase 4 の UI 移行後も互換性を保つよう Register.tsx 側で配慮済み。
+ * placeholder / role で要素を特定している。Register.tsx 側の文言と対応させること。
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -74,7 +73,7 @@ describe("Register コンポーネント", () => {
     await user.click(screen.getByRole("button", { name: /アカウントを作成/i }));
 
     await waitFor(() => {
-      // Fix #9: localStorage.setItem はこのコンポーネントでは呼ばない
+      // localStorage への保存は App.tsx の責務。ここでは呼ばれない
       expect(mockOnRegisterSuccess).toHaveBeenCalledWith("new-token-xyz");
     });
   });

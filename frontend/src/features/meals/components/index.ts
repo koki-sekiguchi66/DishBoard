@@ -1,9 +1,5 @@
 /**
- * meals/components バレルエクスポート（Phase 3 更新）
- *
- * Phase 3 変更:
- *   - CalorieChart を除去（features/analysis/ に移行済み）
- *   - 全コンポーネントを .tsx に変更
+ * meals/components バレルエクスポート
  */
 export { default as MealForm } from "./MealForm";
 export { default as EditMealModal } from "./EditMealModal";

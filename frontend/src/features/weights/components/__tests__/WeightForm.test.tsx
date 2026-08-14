@@ -1,11 +1,5 @@
 /**
- * WeightForm テスト（Phase 3 更新版）
- *
- * 変更点:
- *   - .jsx → .tsx
- *   - shadcn/ui DOM構造に合わせたクエリ調整
- *     (Bootstrap の InputGroup.Text → plain <span>)
- *   - ロジックテストは変更なし
+ * WeightForm テスト
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";

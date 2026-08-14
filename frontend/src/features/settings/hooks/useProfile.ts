@@ -1,5 +1,5 @@
 /**
- * useProfile — ユーザープロフィール取得フック（Phase 4.5）
+ * useProfile — ユーザープロフィール取得フック
  *
  * /api/profile/ から username / email を取得し、
  * loading / error / data の3状態を管理する。

@@ -1,7 +1,6 @@
 /**
- * NutritionSummary — 栄養素サマリーテーブル（Tailwind版）
+ * NutritionSummary — 栄養素サマリーテーブル
  *
- * Phase 3: Bootstrap Table → Tailwind table。
  * MenuPreviewPanel の合計栄養素表示で使用。
  */
 import { cn } from "@/lib/utils";

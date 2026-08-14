@@ -12,18 +12,12 @@ interface DragState {
   startBox: { x: number; y: number; width: number; height: number } | null;
 }
 
-/**
- * 役割：
- * - 撮影した画像を表示
- * - リサイズ可能な枠を表示
- * - 枠内を切り取り、拡大してOCR処理に送る
- */
+/** 撮影画像の上でリサイズ可能な枠を操作させ、枠内を切り出して OCR に渡す。 */
 const ImageCropModal = ({ show, imageBlob, onClose, onCrop }: { show: boolean; imageBlob: Blob | null; onClose: () => void; onCrop: (blob: Blob) => void }) => {
   const [imageUrl, setImageUrl] = useState('');
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // 選択枠の状態（ピクセル値）
   const [cropBox, setCropBox] = useState({
     x: 0,
     y: 0,
@@ -31,7 +25,6 @@ const ImageCropModal = ({ show, imageBlob, onClose, onCrop }: { show: boolean; i
     height: 0,
   });
 
-  // ドラッグ状態
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     isResizing: false,
@@ -47,7 +40,6 @@ const ImageCropModal = ({ show, imageBlob, onClose, onCrop }: { show: boolean; i
   const MIN_OUTPUT_WIDTH = 1200;
   const MIN_OUTPUT_HEIGHT = 900;
 
-  // 画像URLの生成
   useEffect(() => {
     if (imageBlob) {
       const url = URL.createObjectURL(imageBlob);
@@ -61,7 +53,6 @@ const ImageCropModal = ({ show, imageBlob, onClose, onCrop }: { show: boolean; i
     }
   }, [imageBlob]);
 
-  // コンテナサイズの取得と初期枠の設定
   useEffect(() => {
     if (!show || !containerRef.current || !imageUrl) return;
 
@@ -74,7 +65,6 @@ const ImageCropModal = ({ show, imageBlob, onClose, onCrop }: { show: boolean; i
         height: rect.height,
       });
 
-      // 初期枠
       const initialBox = {
         x: rect.width * 0.1,
         y: rect.height * 0.15,
@@ -209,13 +199,8 @@ const ImageCropModal = ({ show, imageBlob, onClose, onCrop }: { show: boolean; i
   }, []);
 
   /**
-   * 枠内を切り取り、拡大してOCR処理に送る
-   * 手順：
-   * 1. 元画像から切り取り領域を特定
-   * 2. 最小1200x900pxになるよう拡大倍率を計算
-   * 3. 高品質な補間で拡大描画
-   * 4. 高品質JPEGとして出力
-   *
+   * 枠内を切り出し、最小 1200x900px まで拡大してから JPEG で出力する。
+   * 小さい画像のままでは OCR がラベルの細かい文字を読めないため、拡大が必要。
    */
   const handleCropAndProcess = useCallback(async () => {
     console.log('[ImageCropModal] ===== トリミング処理開始 =====');
@@ -235,18 +220,15 @@ const ImageCropModal = ({ show, imageBlob, onClose, onCrop }: { show: boolean; i
     try {
       const img = imageRef.current;
 
-      // 画像の実際のサイズと表示サイズを取得
       console.log('[ImageCropModal] Image natural size:', img.naturalWidth, 'x', img.naturalHeight);
       console.log('[ImageCropModal] Image display size:', img.offsetWidth, 'x', img.offsetHeight);
       console.log('[ImageCropModal] Crop box (display):', cropBox);
 
-      // 表示サイズと実際の画像サイズの比率
       const scaleX = img.naturalWidth / img.offsetWidth;
       const scaleY = img.naturalHeight / img.offsetHeight;
 
       console.log('[ImageCropModal] Scale factors:', { scaleX, scaleY });
 
-      // 切り取り領域を実際の画像サイズに変換
       const cropX = Math.round(cropBox.x * scaleX);
       const cropY = Math.round(cropBox.y * scaleY);
       const cropWidth = Math.round(cropBox.width * scaleX);
@@ -286,15 +268,13 @@ const ImageCropModal = ({ show, imageBlob, onClose, onCrop }: { show: boolean; i
         desynchronized: true,
       });
 
-      // 高品質な補間を設定
       ctx!.imageSmoothingEnabled = true;
       ctx!.imageSmoothingQuality = 'high';
 
-      // 背景を白で塗りつぶし（透明部分対策）
+      // 透明部分が黒く落ちると OCR の誤認識が増えるため白で塗る
       ctx!.fillStyle = '#FFFFFF';
       ctx!.fillRect(0, 0, outputWidth, outputHeight);
 
-      // 切り取り領域を拡大して描画
       ctx!.drawImage(
         img,
         cropX, cropY, cropWidth, cropHeight,
@@ -313,7 +293,6 @@ const ImageCropModal = ({ show, imageBlob, onClose, onCrop }: { show: boolean; i
             console.log('[ImageCropModal] Cropped blob size:', blob.size, 'bytes', '(' + (blob.size / 1024).toFixed(1) + ' KB)');
             console.log('[ImageCropModal] Cropped blob type:', blob.type);
 
-            // 親コンポーネントにトリミング・拡大済みBlobを渡す
             onCrop(blob);
             handleClose();
           } else {
@@ -336,7 +315,6 @@ const ImageCropModal = ({ show, imageBlob, onClose, onCrop }: { show: boolean; i
     onClose();
   };
 
-  // リサイズハンドルのスタイル
   const handleStyle: React.CSSProperties = {
     position: 'absolute',
     width: '24px',

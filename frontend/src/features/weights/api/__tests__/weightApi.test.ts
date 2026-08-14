@@ -1,5 +1,5 @@
 /**
- * weightApi テスト（Phase 3 TypeScript版）
+ * weightApi テスト
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createMockWeight } from "@/test/helpers";

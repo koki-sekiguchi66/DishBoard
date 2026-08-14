@@ -1,7 +1,5 @@
 /**
- * mealApi テスト（Phase 3 TypeScript版）
- *
- * 変更: .js → .ts。テストロジック変更なし。
+ * mealApi テスト
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {

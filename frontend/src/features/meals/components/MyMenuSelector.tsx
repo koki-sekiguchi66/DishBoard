@@ -1,4 +1,3 @@
-// src/features/meals/components/MyMenusSelector.tsx
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
@@ -10,23 +9,12 @@ import { customMenuApi } from '@/features/customMenus/api/customMenuApi';
 import { toast } from 'sonner';
 import type { CustomMenu } from '@/types';
 
-/**
- * Myメニューセレクター
- *
- * 役割:
- * - 保存済みカスタムメニューの一覧を表示
- * - メニュー選択で全アイテムを読み込み
- *
- * 設計原則:
- * - ローディング状態の管理
- * - エラーハンドリング
- */
+/** 保存済みの Myメニューを一覧表示し、選択で全アイテムを読み込む。 */
 const MyMenusSelector = ({ menuBuilder }: { menuBuilder: { loadFromCustomMenu: (menu: CustomMenu) => void } }) => {
   const [menus, setMenus] = useState<CustomMenu[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // カスタムメニュー一覧取得
   useEffect(() => {
     const fetchMenus = async () => {
       setIsLoading(true);
@@ -46,7 +34,6 @@ const MyMenusSelector = ({ menuBuilder }: { menuBuilder: { loadFromCustomMenu: (
     fetchMenus();
   }, []);
 
-  // メニューを読み込む
   const handleSelectMenu = async (menuId: number) => {
     try {
       const menuDetail = await customMenuApi.getMenuDetail(menuId);
@@ -57,7 +44,6 @@ const MyMenusSelector = ({ menuBuilder }: { menuBuilder: { loadFromCustomMenu: (
     }
   };
 
-  // ローディング中
   if (isLoading) {
     return (
       <div className="text-center py-4">
@@ -68,7 +54,6 @@ const MyMenusSelector = ({ menuBuilder }: { menuBuilder: { loadFromCustomMenu: (
     );
   }
 
-  // エラー時
   if (error) {
     return (
       <Alert variant="destructive">
@@ -78,7 +63,6 @@ const MyMenusSelector = ({ menuBuilder }: { menuBuilder: { loadFromCustomMenu: (
     );
   }
 
-  // メニューが0件
   if (menus.length === 0) {
     return (
       <Alert>
@@ -90,7 +74,6 @@ const MyMenusSelector = ({ menuBuilder }: { menuBuilder: { loadFromCustomMenu: (
     );
   }
 
-  // メニュー一覧表示
   return (
     <div>
       <h6 className="mb-3 flex items-center gap-2">
