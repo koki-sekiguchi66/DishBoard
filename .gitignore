@@ -12,6 +12,8 @@ cloudfront-config.json
 .env
 .env.*
 .env.*.local
+# プレースホルダのみのテンプレートは追跡する
+!.env.production.example
 
 # Python / Django
 __pycache__/
