@@ -54,3 +54,20 @@ Phase 4: フロントエンドの主要機能実装 (2025年8月上旬)
 - CRUDインターフェースの実装:
     
     ダッシュボード画面に、食事記録と体重記録の作成フォーム及び一覧表示機能を実装。記録の作成・更新・削除が実行された際に、ページをリロードすることなくUIが即座に更新されるよう、ReactのStateを適切に管理するロジックを構築した。
+
+
+---
+
+**デプロイ**
+
+GCP e2-micro への構築・デプロイ手順は [docs/deployment.md](docs/deployment.md) を参照。
+移行の設計仕様は [docs/dishboard-migration-spec-v3.md](docs/dishboard-migration-spec-v3.md) にまとめている。
+
+要点:
+
+- 実行環境: GCP Compute Engine e2-micro（Always Free / us-west1 等）+ Docker Compose
+- 配信: VM 内 nginx で同一オリジン配信（フロント静的 + Django へのリバースプロキシ）
+- DB: PostgreSQL 16 をコンテナ同居。**データ移行は行わず新規構築**（migrate → load_standard_foods → createsuperuser）
+- HTTPS: DuckDNS + Let's Encrypt (certbot)
+- OCR: Azure AI Vision (Read API) へ外部化。Redis / Celery は使用しない
+- 週次スクレイピング: GitHub Actions cron → SSH → `manage.py update_cafeteria_menus`
