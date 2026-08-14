@@ -45,3 +45,6 @@ lerna-debug.log*
 .coverage
 htmlcov/
 .pytest_cache/
+
+# プロジェクトドキュメント（設計の生々しい経緯を含むためリポジトリには含めない）
+docs/
