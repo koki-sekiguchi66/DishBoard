@@ -22,17 +22,14 @@ RUN npm ci
 
 COPY . .
 
-# 環境変数
-ARG VITE_API_URL
-ENV VITE_API_URL=${VITE_API_URL:-http://localhost:8000/api}
+# 環境変数（src/lib/axios.ts が参照する変数名に合わせる）
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8000/api}
 
 RUN npm run build
 
 # 本番環境
 FROM nginx:alpine AS production
-
-# Nginx設定ファイル
-COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # ビルド成果物をコピー
 COPY --from=builder /app/dist /usr/share/nginx/html
