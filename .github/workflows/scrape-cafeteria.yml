@@ -1,0 +1,23 @@
+name: Weekly Cafeteria Menu Scrape
+
+on:
+  schedule:
+    # 毎週月曜 08:00 JST = 日曜 23:00 UTC（cron は UTC。日本は DST なし）
+    - cron: "0 23 * * 0"
+  workflow_dispatch: {}   # 手動実行も可能にする
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run scraping command over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.GCP_VM_HOST }}
+          username: ${{ secrets.GCP_VM_USER }}
+          key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          command_timeout: 10m
+          script: |
+            cd ~/dishboard
+            docker compose -f docker-compose.production.yml exec -T backend \
+              python manage.py update_cafeteria_menus
