@@ -1,56 +1,32 @@
+"""
+栄養成分表示OCRプロセッサ（Azure AI Vision 版）
+
+処理フロー:
+1. Azure AI Vision Read API で画像からテキスト行を抽出（位置情報付き）
+2. Azure が返す行を上→下・左→右にソートして結合
+3. NutritionExtractor で栄養素を抽出（既存ロジック再利用）
+4. OCRPostProcessor で誤認識補正（既存ロジック再利用）
+5. NutritionValidator で整合性検証（既存ロジック再利用）
+"""
+import os
 import re
-import cv2
-import numpy as np
-from PIL import Image
-from pathlib import Path
-from dataclasses import dataclass, field
-from typing import List, Dict, Tuple, Optional, Any
-from sklearn.cluster import DBSCAN
+from typing import List, Dict, Optional, Any
 import logging
+
+from azure.ai.vision.imageanalysis import ImageAnalysisClient
+from azure.ai.vision.imageanalysis.models import VisualFeatures
+from azure.core.credentials import AzureKeyCredential
+from azure.core.exceptions import HttpResponseError
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class TextBox:
-    """EasyOCR の検出結果を構造化したデータクラス。center_x/y は DBSCAN の距離計算に使用。"""
-    text: str
-    bbox: List[List[int]]  # [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]
-    confidence: float
-    center_x: float = field(init=False)
-    center_y: float = field(init=False)
-    width: float = field(init=False)
-    height: float = field(init=False)
-
-    def __post_init__(self):
-        xs = [point[0] for point in self.bbox]
-        ys = [point[1] for point in self.bbox]
-        self.center_x = sum(xs) / 4
-        self.center_y = sum(ys) / 4
-        self.width = max(xs) - min(xs)
-        self.height = max(ys) - min(ys)
-
-
-@dataclass
-class SemanticBlock:
-    """空間的に近接するテキストボックスのグループ。行・テーブル構造に依存せず栄養素情報を抽出する。"""
-    text_boxes: List[TextBox]
-    combined_text: str = field(init=False)
-    top_left_x: float = field(init=False)
-    top_left_y: float = field(init=False)
-
-    def __post_init__(self):
-        sorted_boxes = sorted(
-            self.text_boxes,
-            key=lambda b: (b.center_y // 20, b.center_x)
-        )
-        self.combined_text = ' '.join(box.text for box in sorted_boxes)
-        self.top_left_x = min(box.bbox[0][0] for box in self.text_boxes)
-        self.top_left_y = min(box.bbox[0][1] for box in self.text_boxes)
+class AzureVisionUnavailableError(RuntimeError):
+    """Azure Vision の設定不足・呼び出し失敗を表す明示的な例外"""
 
 
 class OCRPostProcessor:
-    """EasyOCR で頻出する誤認識パターンを文脈に応じて補正するクラス。"""
+    """OCR で頻出する誤認識パターンを文脈に応じて補正するクラス。"""
 
     NUMERIC_CORRECTIONS = {
         'O': '0', 'o': '0', 'Q': '0', 'D': '0',
@@ -151,165 +127,8 @@ class OCRPostProcessor:
         return None
 
 
-class AdaptiveImagePreprocessor:
-    """
-    画像の特性を自動判定して最適な前処理を適用する。
-    画像拡大はフロントエンドで実施済みのためバックエンドでは行わない。
-    """
-
-    @staticmethod
-    def sharpen_image(image: np.ndarray) -> np.ndarray:
-        kernel = np.array([
-            [-1, -1, -1],
-            [-1,  9, -1],
-            [-1, -1, -1]
-        ])
-        sharpened = cv2.filter2D(image, -1, kernel)
-        return cv2.addWeighted(image, 0.3, sharpened, 0.7, 0)
-
-    @staticmethod
-    def detect_inverted_colors(image: np.ndarray) -> bool:
-        if len(image.shape) == 3:
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        else:
-            gray = image
-        return np.mean(gray) < 100
-
-    @staticmethod
-    def detect_red_background(image: np.ndarray) -> bool:
-        if len(image.shape) != 3:
-            return False
-
-        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        lower_red1 = np.array([0, 50, 50])
-        upper_red1 = np.array([10, 255, 255])
-        lower_red2 = np.array([170, 50, 50])
-        upper_red2 = np.array([180, 255, 255])
-
-        mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
-        mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
-        red_mask = mask1 + mask2
-
-        red_ratio = np.sum(red_mask > 0) / (image.shape[0] * image.shape[1])
-        return red_ratio > 0.25
-
-    @staticmethod
-    def correct_skew(image: np.ndarray) -> np.ndarray:
-        """Hough 変換で直線を検出し、支配的な角度から傾きを補正する。"""
-        edges = cv2.Canny(image, 50, 150, apertureSize=3)
-        lines = cv2.HoughLinesP(
-            edges, 1, np.pi/180,
-            threshold=100,
-            minLineLength=50,
-            maxLineGap=10
-        )
-
-        if lines is None or len(lines) == 0:
-            return image
-
-        angles = []
-        for line in lines:
-            x1, y1, x2, y2 = line[0]
-            if x2 - x1 != 0:
-                angle = np.arctan2(y2 - y1, x2 - x1) * 180 / np.pi
-                if abs(angle) < 45:
-                    angles.append(angle)
-
-        if not angles:
-            return image
-
-        median_angle = np.median(angles)
-
-        if abs(median_angle) < 0.5:
-            return image
-
-        h, w = image.shape[:2]
-        center = (w // 2, h // 2)
-        rotation_matrix = cv2.getRotationMatrix2D(center, median_angle, 1.0)
-        rotated = cv2.warpAffine(
-            image, rotation_matrix, (w, h),
-            flags=cv2.INTER_LINEAR,
-            borderMode=cv2.BORDER_REPLICATE
-        )
-
-        logger.info(f"Skew corrected: {median_angle:.2f} degrees")
-        return rotated
-
-    @classmethod
-    def preprocess(cls, image_path: str) -> np.ndarray:
-        img = cv2.imread(str(image_path))
-        if img is None:
-            raise ValueError(f"Failed to load image: {image_path}")
-
-        logger.info(f"Image loaded: {img.shape} (upscaling skipped - done in frontend)")
-
-        if cls.detect_red_background(img):
-            logger.info("Red background detected - applying special processing")
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            gray = cv2.bitwise_not(gray)
-        elif cls.detect_inverted_colors(img):
-            logger.info("Inverted colors detected - applying inversion")
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            gray = cv2.bitwise_not(gray)
-        else:
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-        gray = cls.correct_skew(gray)
-        gray = cls.sharpen_image(gray)
-        denoised = cv2.bilateralFilter(gray, 9, 75, 75)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        enhanced = clahe.apply(denoised)
-
-        logger.info(f"Adaptive preprocessing completed. Output size: {enhanced.shape}")
-        return enhanced
-
-
-class SemanticBlockBuilder:
-    """
-    DBSCAN を使ってテキストボックスを空間的にクラスタリングし意味ブロックを形成する。
-    DBSCAN は事前のクラスタ数指定が不要なため、不規則なレイアウトに適している。
-    """
-
-    def __init__(self, eps_ratio: float = 0.05):
-        self.eps_ratio = eps_ratio
-
-    def build_blocks(
-        self,
-        text_boxes: List[TextBox],
-        image_height: int
-    ) -> List[SemanticBlock]:
-        if not text_boxes:
-            return []
-
-        eps = image_height * self.eps_ratio
-
-        centers = np.array([
-            [box.center_x, box.center_y] for box in text_boxes
-        ])
-
-        clustering = DBSCAN(eps=eps, min_samples=1).fit(centers)
-        labels = clustering.labels_
-
-        clusters: Dict[int, List[TextBox]] = {}
-        for box, label in zip(text_boxes, labels):
-            if label not in clusters:
-                clusters[label] = []
-            clusters[label].append(box)
-
-        blocks = [SemanticBlock(boxes) for boxes in clusters.values()]
-
-        row_height = image_height * 0.1
-        blocks.sort(key=lambda b: (
-            int(b.top_left_y / row_height),
-            b.top_left_x
-        ))
-
-        logger.info(f"Built {len(blocks)} semantic blocks from {len(text_boxes)} text boxes")
-        return blocks
-
-
 class NutritionExtractor:
-    """意味ブロックから栄養素情報を抽出する。"""
+    """テキスト行から栄養素情報を抽出する。"""
 
     NUTRIENT_PATTERNS = {
         'calories': [
@@ -367,11 +186,11 @@ class NutritionExtractor:
     def __init__(self):
         self.post_processor = OCRPostProcessor()
 
-    def extract_from_blocks(
+    def extract_from_lines(
         self,
-        blocks: List[SemanticBlock]
+        lines: List[str]
     ) -> Dict[str, Optional[float]]:
-        """同じ栄養素が複数ブロックで検出された場合は最初の値を採用する。"""
+        """同じ栄養素が複数行で検出された場合は最初の値を採用する。"""
         nutrition: Dict[str, Optional[float]] = {
             'calories': None, 'protein': None, 'fat': None, 'carbohydrates': None,
             'sugar': None, 'dietary_fiber': None, 'sodium': None, 'calcium': None,
@@ -379,9 +198,9 @@ class NutritionExtractor:
             'vitamin_b2': None, 'vitamin_c': None,
         }
 
-        for block in blocks:
-            text = self.post_processor.correct_text(block.combined_text)
-            logger.debug(f"Processing block: '{block.combined_text}' -> '{text}'")
+        for line in lines:
+            text = self.post_processor.correct_text(line)
+            logger.debug(f"Processing line: '{line}' -> '{text}'")
 
             sub_texts = self._split_inline_text(text)
 
@@ -484,80 +303,68 @@ class NutritionValidator:
 class NutritionOCRProcessor:
     """栄養成分表示画像からの情報抽出パイプライン全体を管理するクラス。"""
 
-    def __init__(self, gpu: bool = False):
-        self._reader = None  # 遅延初期化
-        self._gpu = gpu
-        self.preprocessor = AdaptiveImagePreprocessor()
-        self.block_builder = SemanticBlockBuilder()
+    def __init__(self) -> None:
+        self._client: Optional[ImageAnalysisClient] = None
         self.extractor = NutritionExtractor()
         self.validator = NutritionValidator()
 
-        logger.info("NutritionOCRProcessor initialized (lazy loading enabled)")
+        logger.info("NutritionOCRProcessor initialized (Azure Vision backend)")
 
     @property
-    def reader(self):
-        """EasyOCR Reader の遅延初期化。起動コストが高いため初回アクセス時に生成する。"""
-        if self._reader is None:
-            import easyocr
-            logger.info("Initializing EasyOCR reader (this may take a moment)...")
-            self._reader = easyocr.Reader(
-                ['ja', 'en'],
-                gpu=self._gpu,
-                verbose=False
+    def client(self) -> ImageAnalysisClient:
+        """Azure クライアントの遅延初期化。認証情報は環境変数から読む。"""
+        if self._client is None:
+            endpoint = os.getenv("AZURE_VISION_ENDPOINT")
+            key = os.getenv("AZURE_VISION_KEY")
+            if not endpoint or not key:
+                raise AzureVisionUnavailableError(
+                    "AZURE_VISION_ENDPOINT / AZURE_VISION_KEY が未設定です"
+                )
+            self._client = ImageAnalysisClient(
+                endpoint=endpoint,
+                credential=AzureKeyCredential(key),
             )
-            logger.info("EasyOCR reader initialized")
-        return self._reader
+        return self._client
 
-    def extract_text_with_positions(
-        self,
-        image: np.ndarray
-    ) -> Tuple[List[TextBox], int]:
-        results = self.reader.readtext(
-            image,
-            detail=1,
-            paragraph=False,
-            min_size=10,
-            text_threshold=0.5,
-            low_text=0.3,
-            contrast_ths=0.3,
-            adjust_contrast=0.7,
+    def _extract_lines(self, image_path: str) -> List[str]:
+        """Azure Read API で画像からテキスト行を抽出し、読み順にソートして返す。"""
+        with open(image_path, "rb") as f:
+            image_data = f.read()
+
+        result = self.client.analyze(
+            image_data=image_data,
+            visual_features=[VisualFeatures.READ],
         )
 
-        logger.info(f"EasyOCR raw results count: {len(results)}")
-        for i, (bbox, text, confidence) in enumerate(results):
-            logger.info(f"  [{i}] conf={confidence:.3f} text='{text}'")
+        if result.read is None or not result.read.blocks:
+            return []
 
-        text_boxes = []
-        for bbox, text, confidence in results:
-            if confidence < 0.1:
-                logger.debug(f"Skipped low confidence: '{text}' ({confidence:.3f})")
-                continue
-            if not text.strip():
-                continue
+        lines = []
+        for block in result.read.blocks:
+            for line in block.lines:
+                poly = line.bounding_polygon  # [{x, y}, ...]
+                top_y = min(p.y for p in poly)
+                left_x = min(p.x for p in poly)
+                lines.append((top_y, left_x, line.text))
 
-            text_boxes.append(TextBox(
-                text=text.strip(),
-                bbox=bbox,
-                confidence=confidence
-            ))
+        # 同一行とみなす縦方向の許容幅で丸めてから左→右に並べる
+        lines.sort(key=lambda t: (round(t[0] / 20), t[1]))
 
-        logger.info(f"Detected {len(text_boxes)} text boxes (after filtering)")
-        return text_boxes, image.shape[0]
+        logger.info(f"Azure Vision detected {len(lines)} lines")
+        return [text for _, _, text in lines]
 
     def process_nutrition_label(self, image_path: str) -> Dict[str, Any]:
         try:
-            preprocessed = self.preprocessor.preprocess(image_path)
-            text_boxes, image_height = self.extract_text_with_positions(preprocessed)
+            lines = self._extract_lines(image_path)
 
-            if not text_boxes:
+            if not lines:
                 return {
                     'success': False,
                     'error': 'テキストを検出できませんでした。画像が不鮮明な可能性があります。',
                     'nutrition': None
                 }
 
-            blocks = self.block_builder.build_blocks(text_boxes, image_height)
-            nutrition = self.extractor.extract_from_blocks(blocks)
+            nutrition = self.extractor.extract_from_lines(lines)
             validation = self.validator.validate(nutrition)
 
             has_basic_nutrition = any([
@@ -573,7 +380,7 @@ class NutritionOCRProcessor:
                     'error': '栄養素情報を検出できませんでした。'
                              '栄養成分表示が明確に写っているか確認してください。',
                     'nutrition': nutrition,
-                    'detected_texts': [box.text for box in text_boxes[:10]]
+                    'detected_texts': lines[:10]
                 }
 
             nutrition_cleaned = {
@@ -585,7 +392,23 @@ class NutritionOCRProcessor:
                 'success': True,
                 'nutrition': nutrition_cleaned,
                 'validation': validation,
-                'detected_texts': [box.text for box in text_boxes[:10]]
+                'detected_texts': lines[:10]
+            }
+
+        except AzureVisionUnavailableError as e:
+            logger.error(f"Azure Vision 未設定: {e}")
+            return {
+                'success': False,
+                'error': 'OCR機能が一時的に利用できません',
+                'nutrition': None
+            }
+
+        except HttpResponseError as e:
+            logger.exception("Azure Vision API エラー")
+            return {
+                'success': False,
+                'error': f'OCR処理に失敗しました: {e.message}',
+                'nutrition': None
             }
 
         except Exception as e:

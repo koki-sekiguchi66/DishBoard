@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 @parser_classes([MultiPartParser, FormParser])
 @permission_classes([permissions.IsAuthenticated])
 def process_nutrition_label(request):
-    """栄養成分表示画像を受け取り EasyOCR で栄養素を抽出して返す。"""
+    """栄養成分表示画像を受け取り Azure AI Vision で栄養素を抽出して返す。"""
     logger.info("=== OCR処理開始（意味ブロックアプローチ）===")
     logger.info(f"User: {request.user}")
     logger.info(f"FILES: {list(request.FILES.keys())}")
@@ -73,7 +73,7 @@ def process_nutrition_label(request):
         logger.info(f"一時ファイル作成: {tmp_path}")
 
         from .business_logic.ocr_processor import NutritionOCRProcessor
-        processor = NutritionOCRProcessor(gpu=False)
+        processor = NutritionOCRProcessor()
         result = processor.process_nutrition_label(tmp_path)
 
         logger.info(f"OCR処理完了: success={result.get('success')}")

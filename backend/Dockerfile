@@ -14,9 +14,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev \
     musl-dev \
     libpq-dev \
-    tesseract-ocr \
-    tesseract-ocr-jpn \
-    tesseract-ocr-eng \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -67,7 +64,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
 
 CMD ["gunicorn", "dishboard_project.wsgi:application", \
      "--bind", "0.0.0.0:8000", \
-     "--workers", "3", \
+     "--workers", "2", \
      "--threads", "4", \
      "--worker-class", "gthread", \
      "--access-logfile", "-", \

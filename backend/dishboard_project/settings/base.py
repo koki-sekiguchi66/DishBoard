@@ -155,3 +155,7 @@ LOGGING = {
         },
     },
 }
+
+# Azure AI Vision (OCR)
+AZURE_VISION_ENDPOINT = os.getenv('AZURE_VISION_ENDPOINT', '')
+AZURE_VISION_KEY = os.getenv('AZURE_VISION_KEY', '')
