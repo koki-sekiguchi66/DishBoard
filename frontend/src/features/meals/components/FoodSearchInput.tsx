@@ -10,7 +10,7 @@ import { Search, CheckCircle, Loader2, Plus, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import { MeasureField } from "@/components/inputs";
 import { mealApi } from "../api/mealApi";
 import type { StandardFood, FoodSelectionItem } from "@/types";
 
@@ -18,14 +18,21 @@ interface FoodSearchInputProps {
   onFoodSelected: (item: FoodSelectionItem) => void;
 }
 
+/** 摂取量のワンタップ候補。1食ぶんとしてよく使う量 */
+const AMOUNT_PRESETS = [50, 100, 150, 200, 300];
+
+const DEFAULT_AMOUNT = "100";
+
 export default function FoodSearchInput({ onFoodSelected }: FoodSearchInputProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<StandardFood[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedFood, setSelectedFood] = useState<StandardFood | null>(null);
-  const [amount, setAmount] = useState(100);
+  const [amount, setAmount] = useState(DEFAULT_AMOUNT);
   const [calculating, setCalculating] = useState(false);
+
+  const amountValue = parseFloat(amount) || 0;
 
   useEffect(() => {
     if (query.length < 2) {
@@ -58,7 +65,7 @@ export default function FoodSearchInput({ onFoodSelected }: FoodSearchInputProps
     setSelectedFood(food);
     setQuery("");
     setResults([]);
-    setAmount(100);
+    setAmount(DEFAULT_AMOUNT);
     setError("");
   };
 
@@ -66,12 +73,15 @@ export default function FoodSearchInput({ onFoodSelected }: FoodSearchInputProps
     if (!selectedFood) return;
     setCalculating(true);
     try {
-      const response = await mealApi.calculateNutrition(selectedFood.id, amount);
+      const response = await mealApi.calculateNutrition(
+        selectedFood.id,
+        amountValue
+      );
       onFoodSelected({
         item_type: "standard",
         item_id: selectedFood.id,
         item_name: selectedFood.name,
-        amount_grams: amount,
+        amount_grams: amountValue,
         ...response.nutrition,
       });
       handleCancel();
@@ -84,7 +94,7 @@ export default function FoodSearchInput({ onFoodSelected }: FoodSearchInputProps
 
   const handleCancel = () => {
     setSelectedFood(null);
-    setAmount(100);
+    setAmount(DEFAULT_AMOUNT);
     setQuery("");
     setResults([]);
     setError("");
@@ -157,32 +167,28 @@ export default function FoodSearchInput({ onFoodSelected }: FoodSearchInputProps
           </CardHeader>
           <CardContent className="pt-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="font-medium">摂取量 (g)</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
-                    min="0"
-                    step="1"
-                  />
-                  <span className="text-sm text-muted-foreground">g</span>
-                </div>
-              </div>
+              <MeasureField
+                label="摂取量"
+                unit="g"
+                step={10}
+                value={amount}
+                onChange={setAmount}
+                presets={AMOUNT_PRESETS}
+                autoFocus
+              />
 
               <div className="space-y-2">
                 <div className="rounded-md border border-border bg-secondary/30 p-2 text-xs">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">概算カロリー:</span>
                     <span className="font-bold">
-                      {Math.round((selectedFood.nutrition.calories * amount) / 100)} kcal
+                      {Math.round((selectedFood.nutrition.calories * amountValue) / 100)} kcal
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">タンパク質:</span>
                     <span>
-                      {((selectedFood.nutrition.protein * amount) / 100).toFixed(1)} g
+                      {((selectedFood.nutrition.protein * amountValue) / 100).toFixed(1)} g
                     </span>
                   </div>
                 </div>
@@ -190,7 +196,7 @@ export default function FoodSearchInput({ onFoodSelected }: FoodSearchInputProps
                 <Button
                   className="w-full"
                   onClick={handleConfirmAdd}
-                  disabled={amount <= 0 || calculating}
+                  disabled={amountValue <= 0 || calculating}
                 >
                   {calculating ? (
                     <>

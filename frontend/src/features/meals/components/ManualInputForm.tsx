@@ -2,20 +2,30 @@
  * ManualInputForm — 手動栄養素入力フォーム
  *
  * 基本4栄養素 + 詳細8栄養素の折りたたみ表示。
+ * 数値欄は MeasureField に寄せ、Enter で次の欄へ送れるようにしている。
  */
 import { useState, type ChangeEvent } from "react";
 import { Pencil, ChevronDown, ChevronUp, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MeasureField, type MeasureAccent } from "@/components/inputs";
 import type { FoodSelectionItem } from "@/types";
 
 interface ManualInputFormProps {
   onAdd: (item: FoodSelectionItem) => void;
 }
 
-interface FormData {
-  meal_name: string;
+/** 数値欄の定義。FormData のキーと1対1で対応する */
+interface NutrientField {
+  name: keyof NutrientValues;
+  label: string;
+  unit: string;
+  step: number;
+  accent?: MeasureAccent;
+}
+
+interface NutrientValues {
   calories: string;
   protein: string;
   fat: string;
@@ -30,6 +40,31 @@ interface FormData {
   vitamin_c: string;
   amount_grams: string;
 }
+
+interface FormData extends NutrientValues {
+  meal_name: string;
+}
+
+const BASIC_FIELDS: NutrientField[] = [
+  { name: "calories", label: "カロリー", unit: "kcal", step: 10, accent: "calories" },
+  { name: "protein", label: "タンパク質", unit: "g", step: 1, accent: "protein" },
+  { name: "fat", label: "脂質", unit: "g", step: 1, accent: "fat" },
+  { name: "carbohydrates", label: "炭水化物", unit: "g", step: 1, accent: "carbs" },
+];
+
+const DETAIL_FIELDS: NutrientField[] = [
+  { name: "dietary_fiber", label: "食物繊維", unit: "g", step: 0.1 },
+  { name: "sodium", label: "食塩相当量", unit: "g", step: 0.1 },
+  { name: "calcium", label: "カルシウム", unit: "mg", step: 10 },
+  { name: "iron", label: "鉄", unit: "mg", step: 0.1 },
+  { name: "vitamin_a", label: "ビタミンA", unit: "μg", step: 10 },
+  { name: "vitamin_b1", label: "ビタミンB1", unit: "mg", step: 0.01 },
+  { name: "vitamin_b2", label: "ビタミンB2", unit: "mg", step: 0.01 },
+  { name: "vitamin_c", label: "ビタミンC", unit: "mg", step: 1 },
+];
+
+/** 分量のワンタップ候補。1食ぶんとしてよく使う量 */
+const AMOUNT_PRESETS = [50, 100, 150, 200, 300];
 
 const INITIAL_DATA: FormData = {
   meal_name: "",
@@ -48,12 +83,21 @@ const INITIAL_DATA: FormData = {
   amount_grams: "100",
 };
 
+const toNumber = (value: string): number => {
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 export default function ManualInputForm({ onAdd }: ManualInputFormProps) {
   const [data, setData] = useState<FormData>({ ...INITIAL_DATA });
   const [showDetails, setShowDetails] = useState(false);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setData({ ...data, [e.target.name]: e.target.value });
+  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setData({ ...data, meal_name: e.target.value });
+  };
+
+  const setField = (name: keyof NutrientValues, value: string) => {
+    setData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = () => {
@@ -62,24 +106,36 @@ export default function ManualInputForm({ onAdd }: ManualInputFormProps) {
     onAdd({
       item_type: "custom",
       item_name: data.meal_name,
-      amount_grams: parseFloat(data.amount_grams) || 100,
-      calories: parseFloat(data.calories) || 0,
-      protein: parseFloat(data.protein) || 0,
-      fat: parseFloat(data.fat) || 0,
-      carbohydrates: parseFloat(data.carbohydrates) || 0,
-      dietary_fiber: parseFloat(data.dietary_fiber) || 0,
-      sodium: parseFloat(data.sodium) || 0,
-      calcium: parseFloat(data.calcium) || 0,
-      iron: parseFloat(data.iron) || 0,
-      vitamin_a: parseFloat(data.vitamin_a) || 0,
-      vitamin_b1: parseFloat(data.vitamin_b1) || 0,
-      vitamin_b2: parseFloat(data.vitamin_b2) || 0,
-      vitamin_c: parseFloat(data.vitamin_c) || 0,
+      amount_grams: toNumber(data.amount_grams) || 100,
+      calories: toNumber(data.calories),
+      protein: toNumber(data.protein),
+      fat: toNumber(data.fat),
+      carbohydrates: toNumber(data.carbohydrates),
+      dietary_fiber: toNumber(data.dietary_fiber),
+      sodium: toNumber(data.sodium),
+      calcium: toNumber(data.calcium),
+      iron: toNumber(data.iron),
+      vitamin_a: toNumber(data.vitamin_a),
+      vitamin_b1: toNumber(data.vitamin_b1),
+      vitamin_b2: toNumber(data.vitamin_b2),
+      vitamin_c: toNumber(data.vitamin_c),
     });
 
     setData({ ...INITIAL_DATA });
     setShowDetails(false);
   };
+
+  const renderField = (field: NutrientField) => (
+    <MeasureField
+      key={field.name}
+      label={field.label}
+      unit={field.unit}
+      step={field.step}
+      accent={field.accent}
+      value={data[field.name]}
+      onChange={(value) => setField(field.name, value)}
+    />
+  );
 
   return (
     <div className="space-y-3">
@@ -96,43 +152,23 @@ export default function ManualInputForm({ onAdd }: ManualInputFormProps) {
         <Input
           name="meal_name"
           value={data.meal_name}
-          onChange={handleChange}
+          onChange={handleNameChange}
           placeholder="例: 自作のお弁当"
         />
       </div>
 
       {/* 分量 */}
-      <div className="space-y-1">
-        <Label className="text-xs">分量 (g)</Label>
-        <Input
-          type="number"
-          name="amount_grams"
-          value={data.amount_grams}
-          onChange={handleChange}
-          className="h-8 text-sm"
-        />
-      </div>
+      <MeasureField
+        label="分量"
+        unit="g"
+        step={10}
+        value={data.amount_grams}
+        onChange={(value) => setField("amount_grams", value)}
+        presets={AMOUNT_PRESETS}
+      />
 
-      {/* 基本栄養素 (2列グリッド) */}
-      <div className="grid grid-cols-2 gap-2">
-        {[
-          { name: "calories", label: "カロリー(kcal)" },
-          { name: "protein", label: "タンパク質(g)" },
-          { name: "fat", label: "脂質(g)" },
-          { name: "carbohydrates", label: "炭水化物(g)" },
-        ].map((field) => (
-          <div key={field.name} className="space-y-1">
-            <Label className="text-xs">{field.label}</Label>
-            <Input
-              type="number"
-              name={field.name}
-              value={data[field.name as keyof FormData]}
-              onChange={handleChange}
-              className="h-8 text-sm"
-            />
-          </div>
-        ))}
-      </div>
+      {/* 基本栄養素 */}
+      <div className="grid grid-cols-2 gap-2">{BASIC_FIELDS.map(renderField)}</div>
 
       {/* 詳細トグル */}
       <div className="flex justify-end">
@@ -159,29 +195,8 @@ export default function ManualInputForm({ onAdd }: ManualInputFormProps) {
 
       {/* 詳細栄養素 */}
       {showDetails && (
-        <div className="grid grid-cols-2 gap-2 rounded-md border border-border p-3">
-          {[
-            { name: "dietary_fiber", label: "食物繊維(g)" },
-            { name: "sodium", label: "食塩相当量(g)" },
-            { name: "calcium", label: "カルシウム(mg)" },
-            { name: "iron", label: "鉄(mg)" },
-            { name: "vitamin_a", label: "ビタミンA(μg)" },
-            { name: "vitamin_b1", label: "ビタミンB1(mg)" },
-            { name: "vitamin_b2", label: "ビタミンB2(mg)" },
-            { name: "vitamin_c", label: "ビタミンC(mg)" },
-          ].map((field) => (
-            <div key={field.name} className="space-y-1">
-              <Label className="text-xs">{field.label}</Label>
-              <Input
-                type="number"
-                name={field.name}
-                value={data[field.name as keyof FormData]}
-                onChange={handleChange}
-                className="h-8 text-sm"
-                step="0.01"
-              />
-            </div>
-          ))}
+        <div className="grid grid-cols-2 gap-2 rounded-md border border-border p-2">
+          {DETAIL_FIELDS.map(renderField)}
         </div>
       )}
 

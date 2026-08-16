@@ -2,17 +2,23 @@
  * WeightForm — 体重記録フォーム
  */
 import { useState, type FormEvent, type ChangeEvent } from "react";
-import { Calendar, Scale, CheckCircle, Loader2, AlertTriangle } from "lucide-react";
+import { Calendar, CheckCircle, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { MeasureField } from "@/components/inputs";
 import { weightApi } from "../api/weightApi";
 import type { WeightRecord } from "@/types";
 
 interface WeightFormProps {
   onWeightCreated: (weight: WeightRecord) => void;
 }
+
+/** 体重の刻み。体組成計の表示に合わせる */
+const WEIGHT_STEP_KG = 0.1;
+/** サーバ側と揃えた上限 */
+const MAX_WEIGHT_KG = 1000;
 
 export default function WeightForm({ onWeightCreated }: WeightFormProps) {
   const [formData, setFormData] = useState({
@@ -42,7 +48,7 @@ export default function WeightForm({ onWeightCreated }: WeightFormProps) {
       return;
     }
 
-    if (weightVal > 1000) {
+    if (weightVal > MAX_WEIGHT_KG) {
       setMessage("体重は1000kg以下で入力してください。");
       setIsLoading(false);
       return;
@@ -88,28 +94,16 @@ export default function WeightForm({ onWeightCreated }: WeightFormProps) {
       </div>
 
       {/* 体重入力 */}
-      <div className="space-y-2">
-        <Label htmlFor="weight-value" className="flex items-center gap-2 font-medium">
-          <Scale className="h-4 w-4" />
-          体重 (kg)
-        </Label>
-        <div className="flex items-center gap-2">
-          <Input
-            id="weight-value"
-            type="number"
-            step="0.1"
-            min="1"
-            max="1000"
-            name="weight"
-            value={formData.weight}
-            onChange={handleChange}
-            required
-            placeholder="例: 65.5"
-            className="flex-1"
-          />
-          <span className="text-sm font-medium text-muted-foreground">kg</span>
-        </div>
-      </div>
+      <MeasureField
+        id="weight-value"
+        label="体重"
+        unit="kg"
+        step={WEIGHT_STEP_KG}
+        min={0}
+        max={MAX_WEIGHT_KG}
+        value={formData.weight}
+        onChange={(weight) => setFormData((prev) => ({ ...prev, weight }))}
+      />
 
       {/* 送信ボタン */}
       <Button type="submit" className="w-full" disabled={isLoading}>

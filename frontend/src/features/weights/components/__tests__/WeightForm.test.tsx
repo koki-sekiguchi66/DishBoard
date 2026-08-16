@@ -27,7 +27,7 @@ describe("WeightForm コンポーネント", () => {
 
     expect(screen.getByText(/記録日/)).toBeInTheDocument();
     expect(screen.getByText(/体重/)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("例: 65.5")).toBeInTheDocument();
+    expect(screen.getByLabelText("体重（kg）")).toBeInTheDocument();
     expect(screen.getByText("kg")).toBeInTheDocument();
   });
 
@@ -38,7 +38,7 @@ describe("WeightForm コンポーネント", () => {
 
     render(<WeightForm onWeightCreated={mockOnWeightCreated} />);
 
-    const weightInput = screen.getByPlaceholderText("例: 65.5");
+    const weightInput = screen.getByLabelText("体重（kg）");
     await user.clear(weightInput);
     await user.type(weightInput, "65.5");
     await user.click(screen.getByRole("button", { name: /記録する/ }));
@@ -55,7 +55,7 @@ describe("WeightForm コンポーネント", () => {
 
     render(<WeightForm onWeightCreated={mockOnWeightCreated} />);
 
-    const weightInput = screen.getByPlaceholderText("例: 65.5");
+    const weightInput = screen.getByLabelText("体重（kg）");
     await user.clear(weightInput);
     await user.type(weightInput, "65.5");
     await user.click(screen.getByRole("button", { name: /記録する/ }));
@@ -74,7 +74,7 @@ describe("WeightForm コンポーネント", () => {
 
     // weight フィールドは空のまま送信（HTMLのrequired属性があるためブラウザバリデーション）
     // テスト環境ではrequired属性をスキップするため、直接ロジックテスト
-    const weightInput = screen.getByPlaceholderText("例: 65.5");
+    const weightInput = screen.getByLabelText("体重（kg）");
     await user.clear(weightInput);
     await user.type(weightInput, "0");
     await user.click(screen.getByRole("button", { name: /記録する/ }));
