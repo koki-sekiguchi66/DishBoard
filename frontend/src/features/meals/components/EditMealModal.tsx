@@ -5,6 +5,7 @@ import {
   ChevronUp,
   AlertTriangle,
   Loader2,
+  BookmarkPlus,
 } from "lucide-react";
 import {
   Dialog,
@@ -17,9 +18,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { MeasureField, type MeasureAccent } from "@/components/inputs";
+import { useSaveMealAsMenu } from "@/features/customMenus";
 import { mealApi } from "../api/mealApi";
-import type { MealRecord } from "@/types";
+import type { FullNutrition, MealRecord } from "@/types";
+import { FULL_NUTRITION_KEYS } from "@/types";
 
 interface EditMealModalProps {
   meal: MealRecord;
@@ -28,35 +33,102 @@ interface EditMealModalProps {
   onMealUpdated: (meal: MealRecord) => void;
 }
 
+interface NutrientField {
+  name: keyof FullNutrition;
+  label: string;
+  unit: string;
+  step: number;
+  accent?: MeasureAccent;
+}
+
+const BASIC_FIELDS: NutrientField[] = [
+  { name: "calories", label: "カロリー", unit: "kcal", step: 10, accent: "calories" },
+  { name: "protein", label: "タンパク質", unit: "g", step: 1, accent: "protein" },
+  { name: "fat", label: "脂質", unit: "g", step: 1, accent: "fat" },
+  { name: "carbohydrates", label: "炭水化物", unit: "g", step: 1, accent: "carbs" },
+];
+
+const ADVANCED_FIELDS: NutrientField[] = [
+  { name: "dietary_fiber", label: "食物繊維", unit: "g", step: 0.1 },
+  { name: "sodium", label: "食塩相当量", unit: "g", step: 0.1 },
+  { name: "calcium", label: "カルシウム", unit: "mg", step: 10 },
+  { name: "iron", label: "鉄", unit: "mg", step: 0.1 },
+  { name: "vitamin_a", label: "ビタミンA", unit: "μg", step: 10 },
+  { name: "vitamin_b1", label: "ビタミンB1", unit: "mg", step: 0.01 },
+  { name: "vitamin_b2", label: "ビタミンB2", unit: "mg", step: 0.01 },
+  { name: "vitamin_c", label: "ビタミンC", unit: "mg", step: 1 },
+];
+
+/** MeasureField は文字列で値を持つため、編集フォームだけの表現として栄養素を文字列化する */
+type NutrientForm = Record<keyof FullNutrition, string>;
+
+const toNutrientForm = (meal: MealRecord): NutrientForm =>
+  Object.fromEntries(
+    FULL_NUTRITION_KEYS.map((key) => [key, String(meal[key] ?? 0)])
+  ) as NutrientForm;
+
+const toNumber = (value: string): number => {
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const toNutrition = (form: NutrientForm): FullNutrition =>
+  Object.fromEntries(
+    FULL_NUTRITION_KEYS.map((key) => [key, toNumber(form[key])])
+  ) as unknown as FullNutrition;
+
 export default function EditMealModal({
   meal,
   show,
   onClose,
   onMealUpdated,
 }: EditMealModalProps) {
-  const [mealData, setMealData] = useState({ ...meal });
+  const [mealName, setMealName] = useState(meal.meal_name);
+  const [nutrition, setNutrition] = useState<NutrientForm>(() => toNutrientForm(meal));
   const [showAdvancedNutrition, setShowAdvancedNutrition] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setMealData((prev) => ({
-      ...prev,
-      [name]: name === "meal_name" ? value : parseFloat(value) || 0,
-    }));
+  const [saveAsMenu, setSaveAsMenu] = useState(false);
+  const [menuName, setMenuName] = useState(meal.meal_name);
+  const [menuDescription, setMenuDescription] = useState("");
+  const { saveMealAsMenu, isSaving } = useSaveMealAsMenu();
+
+  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setMealName(e.target.value);
+  };
+
+  const setNutrientField = (name: keyof FullNutrition, value: string) => {
+    setNutrition((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async () => {
-    if (!mealData.meal_name.trim()) {
+    if (!mealName.trim()) {
       setError("食事名を入力してください。");
+      return;
+    }
+    if (saveAsMenu && !menuName.trim()) {
+      setError("Myメニューとして保存する場合は名前が必要です。");
       return;
     }
 
     setIsLoading(true);
     setError("");
     try {
-      const updated = await mealApi.updateMeal(meal.id, mealData);
+      const updated = await mealApi.updateMeal(meal.id, {
+        // record_date / meal_timing はこのフォームでは編集させないが、
+        // PUT は非部分更新のため必須項目として送る必要がある
+        // （meal_timing はモデルに default がなく、省略すると 400 になる）
+        record_date: meal.record_date,
+        meal_timing: meal.meal_timing,
+        meal_name: mealName,
+        ...toNutrition(nutrition),
+      });
+
+      if (saveAsMenu && menuName.trim()) {
+        await saveMealAsMenu(meal.id, menuName.trim(), menuDescription.trim());
+      }
+
       onMealUpdated(updated);
       onClose();
     } catch {
@@ -66,23 +138,19 @@ export default function EditMealModal({
     }
   };
 
-  const BASIC_FIELDS = [
-    { name: "calories", label: "カロリー (kcal)", step: "0.1" },
-    { name: "protein", label: "タンパク質 (g)", step: "0.1" },
-    { name: "fat", label: "脂質 (g)", step: "0.1" },
-    { name: "carbohydrates", label: "炭水化物 (g)", step: "0.1" },
-  ];
+  const isSubmitting = isLoading || isSaving;
 
-  const ADVANCED_FIELDS = [
-    { name: "dietary_fiber", label: "食物繊維 (g)", step: "0.1" },
-    { name: "sodium", label: "ナトリウム (mg)", step: "0.1" },
-    { name: "calcium", label: "カルシウム (mg)", step: "0.1" },
-    { name: "iron", label: "鉄分 (mg)", step: "0.01" },
-    { name: "vitamin_a", label: "ビタミンA (μg)", step: "0.1" },
-    { name: "vitamin_b1", label: "ビタミンB1 (mg)", step: "0.01" },
-    { name: "vitamin_b2", label: "ビタミンB2 (mg)", step: "0.01" },
-    { name: "vitamin_c", label: "ビタミンC (mg)", step: "0.1" },
-  ];
+  const renderField = (field: NutrientField) => (
+    <MeasureField
+      key={field.name}
+      label={field.label}
+      unit={field.unit}
+      step={field.step}
+      accent={field.accent}
+      value={nutrition[field.name]}
+      onChange={(value) => setNutrientField(field.name, value)}
+    />
+  );
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && onClose()}>
@@ -99,11 +167,7 @@ export default function EditMealModal({
           {/* 食事名 */}
           <div className="space-y-1.5">
             <Label>食事名</Label>
-            <Input
-              name="meal_name"
-              value={mealData.meal_name}
-              onChange={handleChange}
-            />
+            <Input name="meal_name" value={mealName} onChange={handleNameChange} />
           </div>
 
           {/* 基本栄養素 */}
@@ -131,44 +195,57 @@ export default function EditMealModal({
               </Button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              {BASIC_FIELDS.map((field) => (
-                <div key={field.name} className="space-y-1">
-                  <Label className="text-xs">{field.label}</Label>
-                  <Input
-                    type="number"
-                    name={field.name}
-                    value={(mealData[field.name as keyof typeof mealData] as number) ?? 0}
-                    onChange={handleChange}
-                    step={field.step}
-                    className="h-8 text-sm"
-                  />
-                </div>
-              ))}
-            </div>
+            <div className="grid grid-cols-2 gap-2">{BASIC_FIELDS.map(renderField)}</div>
 
             {/* 詳細栄養素 */}
             {showAdvancedNutrition && (
-              <>
-                <div className="my-3 h-px bg-border" />
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {ADVANCED_FIELDS.map((field) => (
-                    <div key={field.name} className="space-y-1">
-                      <Label className="text-xs">{field.label}</Label>
-                      <Input
-                        type="number"
-                        name={field.name}
-                        value={
-                          (mealData[field.name as keyof typeof mealData] as number) ?? 0
-                        }
-                        onChange={handleChange}
-                        step={field.step}
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                  ))}
+              <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3">
+                {ADVANCED_FIELDS.map(renderField)}
+              </div>
+            )}
+          </div>
+
+          {/* Myメニューとして保存 */}
+          <div className="rounded-lg border border-border p-3">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={saveAsMenu}
+                onChange={(e) => setSaveAsMenu(e.target.checked)}
+                className="h-4 w-4 rounded border-input"
+              />
+              <BookmarkPlus className="h-4 w-4" />
+              Myメニューとしても保存する
+            </label>
+
+            {saveAsMenu && (
+              <div className="mt-3 space-y-2">
+                <div className="space-y-1">
+                  <Label htmlFor="edit-meal-menu-name" className="text-xs">
+                    メニュー名 <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="edit-meal-menu-name"
+                    value={menuName}
+                    onChange={(e) => setMenuName(e.target.value)}
+                    className="h-8 text-sm"
+                    placeholder="例: いつもの朝食"
+                  />
                 </div>
-              </>
+                <div className="space-y-1">
+                  <Label htmlFor="edit-meal-menu-description" className="text-xs">
+                    説明（任意）
+                  </Label>
+                  <Textarea
+                    id="edit-meal-menu-description"
+                    value={menuDescription}
+                    onChange={(e) => setMenuDescription(e.target.value)}
+                    rows={2}
+                    className="text-sm"
+                    placeholder="例: パン + サラダ + コーヒー"
+                  />
+                </div>
+              </div>
             )}
           </div>
 
@@ -182,11 +259,11 @@ export default function EditMealModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
             キャンセル
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? (
+          <Button onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 更新中...
