@@ -5,6 +5,7 @@ interface FoodChipListProps {
   meals: Meal[];
   onEdit?: (meal: Meal) => void;
   onDelete?: (mealId: number) => void;
+  onSaveAsMenu?: (meal: Meal) => void;
   emptyMessage?: string;
 }
 
@@ -12,6 +13,7 @@ export function FoodChipList({
   meals,
   onEdit,
   onDelete,
+  onSaveAsMenu,
   emptyMessage = "記録がありません",
 }: FoodChipListProps) {
   if (meals.length === 0) {
@@ -30,6 +32,7 @@ export function FoodChipList({
           meal={meal}
           onEdit={onEdit}
           onDelete={onDelete}
+          onSaveAsMenu={onSaveAsMenu}
         />
       ))}
     </div>

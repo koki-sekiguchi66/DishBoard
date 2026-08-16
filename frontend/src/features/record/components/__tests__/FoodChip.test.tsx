@@ -57,4 +57,24 @@ describe('FoodChip', () => {
     expect(screen.queryByLabelText('鶏胸肉のグリルを編集')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('鶏胸肉のグリルを削除')).not.toBeInTheDocument();
   });
+
+  it('Myメニュー登録ボタンクリックで onSaveAsMenu が呼ばれる', async () => {
+    const onSaveAsMenu = vi.fn();
+    const user = userEvent.setup();
+
+    render(<FoodChip meal={mockMeal} onSaveAsMenu={onSaveAsMenu} />);
+
+    await user.click(screen.getByLabelText('鶏胸肉のグリルをMyメニューに登録'));
+    expect(onSaveAsMenu).toHaveBeenCalledWith(mockMeal);
+  });
+
+  it('アクションボタンは hover なしで常時表示される', () => {
+    // スマートフォン（PWA）が主な利用端末で hover が発火しないため、
+    // opacity-0 のような hover-reveal クラスが付いていないことを確認する
+    const { container } = render(
+      <FoodChip meal={mockMeal} onEdit={vi.fn()} onDelete={vi.fn()} onSaveAsMenu={vi.fn()} />
+    );
+
+    expect(container.querySelector('.opacity-0')).not.toBeInTheDocument();
+  });
 });

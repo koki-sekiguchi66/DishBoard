@@ -7,6 +7,7 @@ interface MealTimingTabsProps {
   meals: Meal[];
   onEdit?: (meal: Meal) => void;
   onDelete?: (mealId: number) => void;
+  onSaveAsMenu?: (meal: Meal) => void;
 }
 
 const TIMINGS = [
@@ -16,7 +17,12 @@ const TIMINGS = [
   { value: "snack", label: "間食", emoji: "🍩", colorClass: "data-[state=active]:text-snack" },
 ] as const;
 
-export function MealTimingTabs({ meals, onEdit, onDelete }: MealTimingTabsProps) {
+export function MealTimingTabs({
+  meals,
+  onEdit,
+  onDelete,
+  onSaveAsMenu,
+}: MealTimingTabsProps) {
   const groupedMeals = TIMINGS.reduce(
     (acc, timing) => {
       acc[timing.value] = meals.filter((m) => m.meal_timing === timing.value);
@@ -54,6 +60,7 @@ export function MealTimingTabs({ meals, onEdit, onDelete }: MealTimingTabsProps)
             meals={groupedMeals[timing.value] ?? []}
             onEdit={onEdit}
             onDelete={onDelete}
+            onSaveAsMenu={onSaveAsMenu}
             emptyMessage={`${timing.label}の記録がありません`}
           />
         </TabsContent>
