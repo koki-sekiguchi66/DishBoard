@@ -8,10 +8,5 @@ export interface Meal {
   carbohydrates: number;
 }
 
-export interface DailySummary {
-  total_calories?: number;
-  total_protein?: number;
-  total_fat?: number;
-  total_carbohydrates?: number;
-  meal_count?: number;
-}
+/** @/types の DailySummary をそのまま使う。feature 内での重複定義はしない */
+export type { DailySummary } from "@/types";

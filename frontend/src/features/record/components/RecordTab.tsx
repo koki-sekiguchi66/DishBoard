@@ -21,6 +21,7 @@ interface RecordTabProps {
   goals?: Partial<NutritionGoals>;
   onMealEdit?: (meal: Meal) => void;
   onMealDelete?: (mealId: number) => void;
+  onMealSaveAsMenu?: (meal: Meal) => void;
   mealFormSlot: ReactNode;
   weightFormSlot: ReactNode;
 }
@@ -33,6 +34,7 @@ export function RecordTab({
   goals,
   onMealEdit,
   onMealDelete,
+  onMealSaveAsMenu,
   mealFormSlot,
   weightFormSlot,
 }: RecordTabProps) {
@@ -46,10 +48,10 @@ export function RecordTab({
 
       {/* PFCサマリー */}
       <PFCSummary
-        calories={dailySummary?.total_calories ?? null}
-        protein={dailySummary?.total_protein ?? null}
-        fat={dailySummary?.total_fat ?? null}
-        carbs={dailySummary?.total_carbohydrates ?? null}
+        calories={dailySummary?.calories ?? null}
+        protein={dailySummary?.protein ?? null}
+        fat={dailySummary?.fat ?? null}
+        carbs={dailySummary?.carbohydrates ?? null}
         goals={goals}
       />
 
@@ -58,6 +60,7 @@ export function RecordTab({
         meals={meals}
         onEdit={onMealEdit}
         onDelete={onMealDelete}
+        onSaveAsMenu={onMealSaveAsMenu}
       />
 
       {/* 既存の食事記録フォーム */}

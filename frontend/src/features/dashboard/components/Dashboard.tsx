@@ -4,10 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { MealForm, EditMealModal } from "@/features/meals";
 import { WeightForm } from "@/features/weights";
+import { SaveAsMenuModal } from "@/features/customMenus";
 import { InstallPWA } from "@/components/PWA";
 import { useDashboardData } from "../hooks/useDashboardData";
 import { AppShell } from "@/components/layout";
 import { RecordTab } from "@/features/record";
+import type { Meal } from "@/features/record";
 import { AnalysisPage } from "@/features/analysis";
 import { SettingsPage, useGoalSettings } from "@/features/settings";
 import type { MealRecord } from "@/types";
@@ -18,6 +20,7 @@ interface DashboardProps {
 
 const Dashboard = ({ handleLogout }: DashboardProps) => {
   const [editingMeal, setEditingMeal] = useState<MealRecord | null>(null);
+  const [savingMenuMeal, setSavingMenuMeal] = useState<Meal | null>(null);
 
   // toISOString() は UTC 変換で JST の日付がずれるためローカル時刻で組み立てる
   const initialDate = useMemo(() => {
@@ -84,6 +87,7 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
       goals={goals}
       onMealEdit={(meal) => setEditingMeal(meal as MealRecord)}
       onMealDelete={confirmDelete}
+      onMealSaveAsMenu={setSavingMenuMeal}
       mealFormSlot={mealFormSlot}
       weightFormSlot={weightFormSlot}
     />
@@ -96,15 +100,10 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
       dailySummary={
         dailySummary
           ? {
-              calories:
-                dailySummary.calories ?? dailySummary.total_calories ?? 0,
-              protein:
-                dailySummary.protein ?? dailySummary.total_protein ?? 0,
-              fat: dailySummary.fat ?? dailySummary.total_fat ?? 0,
-              carbohydrates:
-                dailySummary.carbohydrates ??
-                dailySummary.total_carbohydrates ??
-                0,
+              calories: dailySummary.calories,
+              protein: dailySummary.protein,
+              fat: dailySummary.fat,
+              carbohydrates: dailySummary.carbohydrates,
             }
           : null
       }
@@ -131,6 +130,13 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
           onMealUpdated={onMealUpdateWrapper}
         />
       )}
+
+      <SaveAsMenuModal
+        show={!!savingMenuMeal}
+        mealId={savingMenuMeal?.id ?? null}
+        defaultName={savingMenuMeal?.meal_name}
+        onClose={() => setSavingMenuMeal(null)}
+      />
     </>
   );
 };

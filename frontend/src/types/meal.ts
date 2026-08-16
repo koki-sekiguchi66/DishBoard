@@ -38,14 +38,15 @@ export interface CreateMealRequest extends FullNutrition {
 /** 食事記録更新リクエスト */
 export type UpdateMealRequest = Partial<MealRecord>;
 
-/** 日次栄養サマリー */
-export interface DailySummary extends FullNutrition {
-  total_calories?: number;
-  total_protein?: number;
-  total_fat?: number;
-  total_carbohydrates?: number;
-  meal_count?: number;
-}
+/**
+ * 日次栄養サマリー
+ *
+ * バックエンド（NutritionCalculatorService.get_daily_nutrition_summary）が
+ * 返すのは calories / protein / ... のフラットなキーのみで、
+ * total_ 接頭辞は付かない。以前 total_calories 等の別名フィールドを
+ * 持たせていたことがあり、参照側がそちらを読んで値が常に空になる不具合があった。
+ */
+export type DailySummary = FullNutrition;
 
 /** 日次サマリーAPIレスポンス */
 export interface DailySummaryResponse {
