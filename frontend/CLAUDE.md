@@ -7,6 +7,7 @@ src/
   features/<name>/     機能単位。api/ components/ hooks/ types.ts index.ts
   components/ui/       shadcn/ui のプリミティブ。ここに独自コンポーネントを増やさない
   components/layout/   AppShell / Header / Sidebar
+  components/inputs/   feature をまたぐ独自の入力部品（MeasureField / QuickAmountChips）
   types/               feature をまたぐ共通型（index.ts で再エクスポート）
   lib/                 axios インスタンス（apiClient）と汎用ユーティリティ
   test/                Vitest のセットアップとヘルパー
@@ -42,6 +43,8 @@ import X from '@/features/customFoods/components/EditCustomFoodModal'; // ❌
 - **色を直接書かない**。`index.css` の `:root`（dark）と `:root.light` に定義したテーマ変数（`--primary` / `--muted-foreground` / `--color-protein` 等）経由で参照する。直接書くと `useTheme` のテーマ切替で破綻する
 - **トーストは `sonner`**。`react-hot-toast` は削除済み
 - グラフは `recharts`
+- **数値欄は `MeasureField`（`@/components/inputs`）を使う**。`<input type="number">` を直接置かない。
+  値は文字列で渡す（空欄と 0 を区別するため）。ホイール誤爆・スピナーの小ささ・0 の打ち消しを避ける狙い（→ `docs-public/decisions.md` #18）
 
 ## ロジックの置き場所
 

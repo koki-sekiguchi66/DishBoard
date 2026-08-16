@@ -106,6 +106,7 @@ nginx が `/` で SPA を、`/api/` で Django をプロキシするため、ブ
 │       ├── features/<name>/   機能単位（api / components / hooks / types.ts / index.ts）
 │       ├── components/ui/     shadcn/ui のプリミティブ
 │       ├── components/layout/ AppShell / Header / Sidebar
+│       ├── components/inputs/ feature をまたぐ入力部品（MeasureField ほか）
 │       ├── types/             feature をまたぐ共通型
 │       ├── lib/axios.ts       認証トークンを付与する axios インスタンス
 │       └── test/              Vitest のセットアップとモックファクトリ
