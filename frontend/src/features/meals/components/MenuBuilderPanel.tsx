@@ -17,8 +17,12 @@ import MyItemsSelector from "./MyItemsSelector";
 import CafeteriaSelector from "./CafeteriaSelector";
 import { OCRButton } from "@/features/ocr";
 import type { MenuBuilderReturn } from "../hooks/useMenuBuilder";
-import type { FoodSelectionItem, MealTiming } from "@/types";
-import { MEAL_TIMING_LABELS } from "@/types";
+import type { FoodSelectionItem, FullNutrition, MealTiming } from "@/types";
+import {
+  FULL_NUTRITION_KEYS,
+  MEAL_TIMING_LABELS,
+  PER_100G_FIELD,
+} from "@/types";
 
 interface MenuBuilderPanelProps {
   menuBuilder: MenuBuilderReturn;
@@ -41,6 +45,49 @@ const TIMING_OPTIONS: { value: MealTiming; label: string }[] = [
   { value: "snack", label: MEAL_TIMING_LABELS.snack },
 ];
 
+/**
+ * 選択された食品をメニュー明細（摂取量ぶんの実数値）へ正規化する。
+ *
+ * 100g あたりの値しか持たない Myアイテムは、PER_100G_FIELD で対応する
+ * フィールドを引いてから按分する。キー名を組み立てて引くと
+ * carbs_per_100g / fiber_per_100g を取り逃がして 0 になるため。
+ */
+export const toMenuItemPayload = (
+  item: FoodSelectionItem
+): Record<string, unknown> => {
+  const amount = parseFloat(String(item.amount_grams || item.amount || 100));
+
+  const resolveNutrient = (key: keyof FullNutrition): number => {
+    const direct = item[key];
+    if (direct !== undefined && direct !== null) {
+      return parseFloat(String(direct));
+    }
+    const per100Val = item[PER_100G_FIELD[key]];
+    if (per100Val !== undefined && per100Val !== null) {
+      return (parseFloat(String(per100Val)) * amount) / 100;
+    }
+    return 0;
+  };
+
+  const nutrition = Object.fromEntries(
+    FULL_NUTRITION_KEYS.map((key) => [key, resolveNutrient(key)])
+  );
+
+  return {
+    item_type:
+      item.item_type ||
+      (item.menu_id
+        ? "cafeteria"
+        : item.calories_per_100g
+          ? "custom"
+          : "standard"),
+    item_id: item.item_id || item.menu_id || 0,
+    item_name: item.item_name,
+    amount_grams: amount,
+    ...nutrition,
+  };
+};
+
 export default function MenuBuilderPanel({ menuBuilder }: MenuBuilderPanelProps) {
   const {
     recordDate,
@@ -53,52 +100,7 @@ export default function MenuBuilderPanel({ menuBuilder }: MenuBuilderPanelProps)
   } = menuBuilder;
 
   const handleFoodSelected = (item: FoodSelectionItem) => {
-    const amount = parseFloat(
-      String(item.amount_grams || item.amount || 100)
-    );
-
-    const resolveNutrient = (
-      stdKey: keyof FoodSelectionItem,
-      customKey: string
-    ): number => {
-      if (item[stdKey] !== undefined && item[stdKey] !== null) {
-        return parseFloat(String(item[stdKey]));
-      }
-      const per100Val =
-        (item as unknown as Record<string, unknown>)[customKey] ||
-        (item as unknown as Record<string, unknown>)[`${String(stdKey)}_per_100g`];
-      if (per100Val !== undefined && per100Val !== null) {
-        return (parseFloat(String(per100Val)) * amount) / 100;
-      }
-      return 0;
-    };
-
-    const newItem: Record<string, unknown> = {
-      item_type:
-        item.item_type ||
-        (item.menu_id
-          ? "cafeteria"
-          : item.calories_per_100g
-            ? "custom"
-            : "standard"),
-      item_id: item.item_id || item.menu_id || 0,
-      item_name: item.item_name,
-      amount_grams: amount,
-      calories: resolveNutrient("calories", "calories_per_100g"),
-      protein: resolveNutrient("protein", "protein_per_100g"),
-      fat: resolveNutrient("fat", "fat_per_100g"),
-      carbohydrates: resolveNutrient("carbohydrates", "carbohydrates_per_100g"),
-      dietary_fiber: resolveNutrient("dietary_fiber", "dietary_fiber_per_100g"),
-      sodium: resolveNutrient("sodium", "sodium_per_100g"),
-      calcium: resolveNutrient("calcium", "calcium_per_100g"),
-      iron: resolveNutrient("iron", "iron_per_100g"),
-      vitamin_a: resolveNutrient("vitamin_a", "vitamin_a_per_100g"),
-      vitamin_b1: resolveNutrient("vitamin_b1", "vitamin_b1_per_100g"),
-      vitamin_b2: resolveNutrient("vitamin_b2", "vitamin_b2_per_100g"),
-      vitamin_c: resolveNutrient("vitamin_c", "vitamin_c_per_100g"),
-    };
-
-    addMenuItem(newItem);
+    addMenuItem(toMenuItemPayload(item));
   };
 
   return (

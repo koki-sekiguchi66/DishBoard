@@ -146,7 +146,7 @@ const CustomFoodModal = ({ show, onClose, onFoodSelected }: {
                             {food.calories_per_100g}kcal/100g
                           </Badge>
                           <small className="text-muted-foreground">
-                            P:{food.protein_per_100g}g F:{food.fat_per_100g}g C:{(food as unknown as Record<string, number>).carbs_per_100g}g
+                            P:{food.protein_per_100g}g F:{food.fat_per_100g}g C:{food.carbs_per_100g}g
                           </small>
                         </div>
                       </div>
