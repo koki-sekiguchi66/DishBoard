@@ -46,7 +46,7 @@ export function AnalysisPage({ allMeals, weights, dailySummary }: AnalysisPagePr
     <div className="space-y-4 pb-8" data-testid="analysis-page">
       <WeeklyTrend meals={allMeals} />
 
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="bg-ledger rounded-xl border border-border bg-card p-4">
         <h3 className="mb-3 text-sm font-medium text-foreground">今日の目標達成状況</h3>
         <PFCProgressBar current={currentNutrition} />
       </div>
