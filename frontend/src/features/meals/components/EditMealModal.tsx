@@ -22,8 +22,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MeasureField, type MeasureAccent } from "@/components/inputs";
 import { useSaveMealAsMenu } from "@/features/customMenus";
+import { SaveAsCustomFoodModal } from "@/features/customFoods";
 import { mealApi } from "../api/mealApi";
-import type { FullNutrition, MealRecord } from "@/types";
+import type { FullNutrition, MealRecord, MealRecordItem } from "@/types";
 import { FULL_NUTRITION_KEYS } from "@/types";
 
 interface EditMealModalProps {
@@ -94,6 +95,8 @@ export default function EditMealModal({
   const [menuDescription, setMenuDescription] = useState("");
   const { saveMealAsMenu, isSaving } = useSaveMealAsMenu();
 
+  const [savingItem, setSavingItem] = useState<MealRecordItem | null>(null);
+
   const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     setMealName(e.target.value);
   };
@@ -153,127 +156,162 @@ export default function EditMealModal({
   );
 
   return (
-    <Dialog open={show} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Pencil className="h-4 w-4" />
-            食事記録を編集
-          </DialogTitle>
-          <DialogDescription>栄養素の値を修正できます</DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={show} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-4 w-4" />
+              食事記録を編集
+            </DialogTitle>
+            <DialogDescription>栄養素の値を修正できます</DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          {/* 食事名 */}
-          <div className="space-y-1.5">
-            <Label>食事名</Label>
-            <Input name="meal_name" value={mealName} onChange={handleNameChange} />
-          </div>
-
-          {/* 基本栄養素 */}
-          <div className="rounded-lg border border-border p-3">
-            <div className="mb-3 flex items-center justify-between">
-              <h4 className="text-sm font-medium">栄養成分</h4>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowAdvancedNutrition(!showAdvancedNutrition)}
-                className="text-xs"
-              >
-                {showAdvancedNutrition ? (
-                  <>
-                    <ChevronUp className="mr-1 h-3 w-3" />
-                    閉じる
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="mr-1 h-3 w-3" />
-                    詳細な栄養素を表示
-                  </>
-                )}
-              </Button>
+          <div className="space-y-4">
+            {/* 食事名 */}
+            <div className="space-y-1.5">
+              <Label>食事名</Label>
+              <Input name="meal_name" value={mealName} onChange={handleNameChange} />
             </div>
 
-            <div className="grid grid-cols-2 gap-2">{BASIC_FIELDS.map(renderField)}</div>
-
-            {/* 詳細栄養素 */}
-            {showAdvancedNutrition && (
-              <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3">
-                {ADVANCED_FIELDS.map(renderField)}
+            {/* 基本栄養素 */}
+            <div className="rounded-lg border border-border p-3">
+              <div className="mb-3 flex items-center justify-between">
+                <h4 className="text-sm font-medium">栄養成分</h4>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAdvancedNutrition(!showAdvancedNutrition)}
+                  className="text-xs"
+                >
+                  {showAdvancedNutrition ? (
+                    <>
+                      <ChevronUp className="mr-1 h-3 w-3" />
+                      閉じる
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="mr-1 h-3 w-3" />
+                      詳細な栄養素を表示
+                    </>
+                  )}
+                </Button>
               </div>
+
+              <div className="grid grid-cols-2 gap-2">{BASIC_FIELDS.map(renderField)}</div>
+
+              {/* 詳細栄養素 */}
+              {showAdvancedNutrition && (
+                <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3">
+                  {ADVANCED_FIELDS.map(renderField)}
+                </div>
+              )}
+            </div>
+
+            {/* この記録の品目をMyアイテムへ */}
+            {meal.items.length > 0 && (
+              <div className="rounded-lg border border-border p-3">
+                <h4 className="mb-2 text-sm font-medium">この記録の品目</h4>
+                <ul className="divide-y divide-border">
+                  {meal.items.map((item) => (
+                    <li
+                      key={item.id}
+                      className="flex items-center justify-between gap-2 py-1.5"
+                    >
+                      <span className="min-w-0 truncate text-sm text-foreground">
+                        {item.item_name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSavingItem(item)}
+                        className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                        aria-label={`${item.item_name}をMyアイテムに追加`}
+                      >
+                        <BookmarkPlus className="h-3.5 w-3.5" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Myメニューとして保存 */}
+            <div className="rounded-lg border border-border p-3">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={saveAsMenu}
+                  onChange={(e) => setSaveAsMenu(e.target.checked)}
+                  className="h-4 w-4 rounded border-input"
+                />
+                <BookmarkPlus className="h-4 w-4" />
+                Myメニューとしても保存する
+              </label>
+
+              {saveAsMenu && (
+                <div className="mt-3 space-y-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="edit-meal-menu-name" className="text-xs">
+                      メニュー名 <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="edit-meal-menu-name"
+                      value={menuName}
+                      onChange={(e) => setMenuName(e.target.value)}
+                      className="h-8 text-sm"
+                      placeholder="例: いつもの朝食"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="edit-meal-menu-description" className="text-xs">
+                      説明（任意）
+                    </Label>
+                    <Textarea
+                      id="edit-meal-menu-description"
+                      value={menuDescription}
+                      onChange={(e) => setMenuDescription(e.target.value)}
+                      rows={2}
+                      className="text-sm"
+                      placeholder="例: パン + サラダ + コーヒー"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* エラー */}
+            {error && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
           </div>
 
-          {/* Myメニューとして保存 */}
-          <div className="rounded-lg border border-border p-3">
-            <label className="flex items-center gap-2 text-sm font-medium">
-              <input
-                type="checkbox"
-                checked={saveAsMenu}
-                onChange={(e) => setSaveAsMenu(e.target.checked)}
-                className="h-4 w-4 rounded border-input"
-              />
-              <BookmarkPlus className="h-4 w-4" />
-              Myメニューとしても保存する
-            </label>
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
+              キャンセル
+            </Button>
+            <Button onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  更新中...
+                </>
+              ) : (
+                "更新する"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-            {saveAsMenu && (
-              <div className="mt-3 space-y-2">
-                <div className="space-y-1">
-                  <Label htmlFor="edit-meal-menu-name" className="text-xs">
-                    メニュー名 <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="edit-meal-menu-name"
-                    value={menuName}
-                    onChange={(e) => setMenuName(e.target.value)}
-                    className="h-8 text-sm"
-                    placeholder="例: いつもの朝食"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="edit-meal-menu-description" className="text-xs">
-                    説明（任意）
-                  </Label>
-                  <Textarea
-                    id="edit-meal-menu-description"
-                    value={menuDescription}
-                    onChange={(e) => setMenuDescription(e.target.value)}
-                    rows={2}
-                    className="text-sm"
-                    placeholder="例: パン + サラダ + コーヒー"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* エラー */}
-          {error && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-            キャンセル
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                更新中...
-              </>
-            ) : (
-              "更新する"
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <SaveAsCustomFoodModal
+        show={!!savingItem}
+        item={savingItem}
+        onClose={() => setSavingItem(null)}
+      />
+    </>
   );
 }

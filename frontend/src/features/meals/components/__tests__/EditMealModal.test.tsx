@@ -14,6 +14,11 @@ vi.mock("@/features/customMenus", () => ({
   useSaveMealAsMenu: () => ({ saveMealAsMenu, isSaving: false }),
 }));
 
+const saveAsCustomFoodModalMock = vi.fn((_props: unknown) => null);
+vi.mock("@/features/customFoods", () => ({
+  SaveAsCustomFoodModal: (props: unknown) => saveAsCustomFoodModalMock(props),
+}));
+
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
@@ -101,5 +106,58 @@ describe("EditMealModal コンポーネント", () => {
 
     expect(await screen.findByText(/名前が必要です/)).toBeInTheDocument();
     expect(mealApi.updateMeal).not.toHaveBeenCalled();
+  });
+
+  it("品目がある記録では品目一覧を表示し、追加ボタンで SaveAsCustomFoodModal へ渡す", async () => {
+    const mealWithItems = createMockMeal({
+      id: 42,
+      meal_name: "鶏胸肉のグリル",
+      items: [
+        {
+          id: 1,
+          item_type: "standard",
+          item_id: 10,
+          item_name: "白米",
+          amount_grams: 200,
+          display_order: 1,
+          calories: 336,
+          protein: 5,
+          fat: 0.6,
+          carbohydrates: 74.2,
+          dietary_fiber: 0.6,
+          sodium: 0,
+          calcium: 0,
+          iron: 0,
+          vitamin_a: 0,
+          vitamin_b1: 0,
+          vitamin_b2: 0,
+          vitamin_c: 0,
+        },
+      ],
+    });
+    const user = userEvent.setup();
+
+    render(
+      <EditMealModal meal={mealWithItems} show onClose={onClose} onMealUpdated={onMealUpdated} />
+    );
+
+    expect(screen.getByText("白米")).toBeInTheDocument();
+    expect(saveAsCustomFoodModalMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ show: false, item: null })
+    );
+
+    await user.click(screen.getByRole("button", { name: "白米をMyアイテムに追加" }));
+
+    expect(saveAsCustomFoodModalMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ show: true, item: mealWithItems.items[0] })
+    );
+  });
+
+  it("品目がない記録では品目一覧セクションを表示しない", () => {
+    render(
+      <EditMealModal meal={meal} show onClose={onClose} onMealUpdated={onMealUpdated} />
+    );
+
+    expect(screen.queryByText("この記録の品目")).not.toBeInTheDocument();
   });
 });
