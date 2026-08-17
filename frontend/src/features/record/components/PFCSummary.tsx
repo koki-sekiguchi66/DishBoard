@@ -5,6 +5,8 @@
  *   - goals は optional。未指定なら現在値のみを表示する
  *   - 表示は控えめに: "1500/2000" の "/2000" 部分は小さい text-muted
  *   - 4カラムグリッドの幅は変えず、文字サイズで吸収
+ *   - 目標値がある項目だけ、MeasureField の目盛り帯（ADR #18）と統一感のある
+ *     ゲージバーを添える（ADR #21）。目標未設定・値未取得時はバーを出さない
  */
 import { cn } from "@/lib/utils";
 import type { NutritionGoals } from "@/types";
@@ -24,6 +26,7 @@ interface NutrientDisplayProps {
   goal?: number;
   unit: string;
   colorClass: string;
+  barColorClass: string;
 }
 
 function NutrientDisplay({
@@ -32,7 +35,11 @@ function NutrientDisplay({
   goal,
   unit,
   colorClass,
+  barColorClass,
 }: NutrientDisplayProps) {
+  const pct =
+    value != null && goal ? Math.min(100, Math.max(0, (value / goal) * 100)) : null;
+
   return (
     <div className="text-center">
       <div className="flex items-baseline justify-center gap-0.5">
@@ -49,6 +56,17 @@ function NutrientDisplay({
         {unit !== "" && <span className="mr-0.5">{unit}</span>}
         {label}
       </div>
+      {pct != null && (
+        <div
+          className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted"
+          aria-hidden="true"
+        >
+          <div
+            className={cn("h-full rounded-full", barColorClass)}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -62,7 +80,7 @@ export function PFCSummary({
 }: PFCSummaryProps) {
   return (
     <div
-      className="grid grid-cols-4 gap-2 rounded-xl bg-secondary/50 p-4"
+      className="grid grid-cols-4 gap-2 rounded-xl border border-border bg-card p-4"
       role="region"
       aria-label="栄養サマリー"
     >
@@ -72,6 +90,7 @@ export function PFCSummary({
         goal={goals?.calories}
         unit="kcal"
         colorClass="text-calories"
+        barColorClass="bg-calories"
       />
       <NutrientDisplay
         label="P"
@@ -79,6 +98,7 @@ export function PFCSummary({
         goal={goals?.protein}
         unit="g"
         colorClass="text-protein"
+        barColorClass="bg-protein"
       />
       <NutrientDisplay
         label="F"
@@ -86,6 +106,7 @@ export function PFCSummary({
         goal={goals?.fat}
         unit="g"
         colorClass="text-fat"
+        barColorClass="bg-fat"
       />
       <NutrientDisplay
         label="C"
@@ -93,6 +114,7 @@ export function PFCSummary({
         goal={goals?.carbs}
         unit="g"
         colorClass="text-carbs"
+        barColorClass="bg-carbs"
       />
     </div>
   );

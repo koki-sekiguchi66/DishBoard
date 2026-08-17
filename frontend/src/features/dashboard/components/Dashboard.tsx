@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
-import { UtensilsCrossed, Scale } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RiceBallIcon, ScaleGaugeIcon } from "@/components/icons";
 
 import { MealForm, EditMealModal, mealApi, useQuickRepeat } from "@/features/meals";
 import { WeightForm } from "@/features/weights";
@@ -75,7 +75,7 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
       <Card>
         <CardHeader className="bg-primary/10">
           <CardTitle className="flex items-center gap-2 text-base">
-            <UtensilsCrossed className="h-4 w-4" />
+            <RiceBallIcon className="h-4 w-4" />
             食事記録
           </CardTitle>
         </CardHeader>
@@ -92,7 +92,7 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
       <Card>
         <CardHeader className="bg-blue-500/10">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Scale className="h-4 w-4" />
+            <ScaleGaugeIcon className="h-4 w-4" />
             体重記録
           </CardTitle>
         </CardHeader>
