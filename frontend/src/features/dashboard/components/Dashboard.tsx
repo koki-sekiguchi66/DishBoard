@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { UtensilsCrossed, Scale } from "lucide-react";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { MealForm, EditMealModal } from "@/features/meals";
+import { MealForm, EditMealModal, mealApi } from "@/features/meals";
 import { WeightForm } from "@/features/weights";
 import { SaveAsMenuModal } from "@/features/customMenus";
 import { InstallPWA } from "@/components/PWA";
@@ -29,9 +30,15 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
   }, []);
 
   const { data, actions } = useDashboardData(initialDate);
-  const { meals, allMeals, weights, dailySummary, selectedDate } = data;
+  const { meals, allMeals, weights, dailySummary, selectedDate, message } = data;
 
   const { goals } = useGoalSettings();
+
+  // data.message はデータ取得・削除失敗時に立つが、UI側で表示先を持っていなかったため
+  // ユーザーには何も伝わらず失敗が握りつぶされていた。sonner のトーストで拾う
+  useEffect(() => {
+    if (message) toast.error(message);
+  }, [message]);
 
   const onMealUpdateWrapper = (updatedMeal: MealRecord) => {
     actions.handleMealUpdated(updatedMeal);
@@ -41,6 +48,19 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
   const confirmDelete = (mealId: number) => {
     if (window.confirm("この記録を本当に削除しますか？")) {
       actions.handleMealDelete(mealId);
+    }
+  };
+
+  // 一覧の meal は MealRecordListSerializer 由来で基本4栄養素しか持たないため、
+  // そのまま編集モーダルへ渡すと詳細栄養素（食物繊維・ナトリウム等）が
+  // 0として表示され、更新時に実際の値を消してしまう。編集前に詳細を取得し直す
+  const handleMealEdit = async (meal: Meal) => {
+    try {
+      const detail = await mealApi.getMealDetail(meal.id);
+      setEditingMeal(detail);
+    } catch (error) {
+      console.error("Failed to fetch meal detail", error);
+      toast.error("食事記録の詳細取得に失敗しました。");
     }
   };
 
@@ -85,7 +105,7 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
       meals={meals}
       dailySummary={dailySummary}
       goals={goals}
-      onMealEdit={(meal) => setEditingMeal(meal as MealRecord)}
+      onMealEdit={handleMealEdit}
       onMealDelete={confirmDelete}
       onMealSaveAsMenu={setSavingMenuMeal}
       mealFormSlot={mealFormSlot}

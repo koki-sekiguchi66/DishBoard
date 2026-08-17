@@ -138,7 +138,35 @@ class MealRecordRetrieveTests(APITestCase):
         response = self.client.get(f'{self.meal_url}{meal.id}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['meal_name'], meal.meal_name)
-        
+
+    def test_list_response_omits_detail_nutrients_and_items(self):
+        """一覧レスポンスは MealRecordListSerializer 由来で詳細栄養素とitemsを含まない
+
+        フロントエンドがこの一覧レスポンスをそのまま編集フォームへ渡すと、
+        dietary_fiber 等が undefined から 0 として扱われ、更新のたびに
+        実際の値を消してしまう不具合があった。一覧と詳細でフィールドが
+        異なるというこの契約を明文化しておく。
+        """
+        response = self.client.get(self.meal_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        item = response.data[0]
+        for field in ('dietary_fiber', 'sodium', 'calcium', 'iron',
+                      'vitamin_a', 'vitamin_b1', 'vitamin_b2', 'vitamin_c', 'items'):
+            self.assertNotIn(field, item)
+        self.assertIn('items_count', item)
+
+    def test_detail_response_includes_detail_nutrients_and_items(self):
+        """詳細レスポンス（MealRecordSerializer）は詳細栄養素とitemsを含む"""
+        meal = MealRecord.objects.first()
+        response = self.client.get(f'{self.meal_url}{meal.id}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        for field in ('dietary_fiber', 'sodium', 'calcium', 'iron',
+                      'vitamin_a', 'vitamin_b1', 'vitamin_b2', 'vitamin_c', 'items'):
+            self.assertIn(field, response.data)
+
+
     def test_meal_records_ordered_by_date(self):
         """食事記録が日付順に並んでいることを確認"""
         MealRecord.objects.create(
