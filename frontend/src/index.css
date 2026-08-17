@@ -7,38 +7,57 @@
 /* カラー定義 */
 
 :root {
-  /* ── Surface Colors ── */
-  --background: oklch(0.145 0.005 286);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.185 0.005 286);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.185 0.005 286);
-  --popover-foreground: oklch(0.985 0 0);
+  /* ── Surface Colors ──
+   * 「食堂の掲示板」提案（docs-public/ui-design-proposal.md, ADR #21）の夜=黒板。
+   * shadcn/ui既定の色相286（青紫寄りグレー）から、色相55〜70（黒板の緑黒〜生成り）に寄せた。
+   * 紙・黒板という参照色そのものを反映するため、oklchではなくhexで直接指定している。
+   */
+  --background: #1c2420;
+  --foreground: #ede6d2;
+  --card: #26312a;
+  --card-foreground: #ede6d2;
+  --popover: #26312a;
+  --popover-foreground: #ede6d2;
 
-  /* ── Brand Colors ── */
+  /* ── Brand Colors ──
+   * primary は元々色相16.57（赤というより朱色寄り）で、食券のスタンプ・鳥居の朱色として
+   * そのまま意味づけできるため変更しない（ADR #14の「ブランド一貫性のため据え置き」を継承）。
+   */
   --primary: oklch(0.607 0.213 16.57);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.21 0.006 286);
-  --secondary-foreground: oklch(0.985 0 0);
-  --accent: oklch(0.274 0.006 286);
-  --accent-foreground: oklch(0.985 0 0);
+  --secondary: #202b24;
+  --secondary-foreground: #ede6d2;
+  --accent: #202b24;
+  --accent-foreground: #ede6d2;
   --destructive: oklch(0.577 0.245 27.32);
   --destructive-foreground: oklch(1 0 0);
 
   /* ── Muted / Borders ── */
-  --muted: oklch(0.21 0.006 286);
-  --muted-foreground: oklch(0.556 0.014 286);
-  --border: oklch(0.274 0.006 286);
-  --input: oklch(0.274 0.006 286);
+  --muted: #202b24;
+  --muted-foreground: #9fae97;
+  --border: #3b4a3f;
+  --input: #3b4a3f;
   --ring: oklch(0.607 0.213 16.57);
+
+  /* ── 黒板パネル専用トークン（CharacterGreeting等） ──
+   * ページ全体のforeground/muted-foregroundとは独立に定義する。
+   * 黒板パネルは昼テーマでもページ背景より暗いため、ページ側トークンに連動させると
+   * 昼テーマで暗い背景に暗い文字が重なり読めなくなる。
+   */
+  --board: #14201a;
+  --board-foreground: #ede6d2;
+  --board-muted: #7e8c79;
 
   /* ── Radius ── */
   --radius: 0.625rem;
 
-  /* ── PFC (栄養素) 専用カラー ── */
-  --color-protein: oklch(0.707 0.165 254.62);
-  --color-fat: oklch(0.795 0.184 86.05);
-  --color-carbs: oklch(0.723 0.191 149.58);
+  /* ── PFC (栄養素) 専用カラー ──
+   * 意味づけ（protein=寒色 / fat=黄 / carbs=緑）は維持し、彩度を落として
+   * 生成り・黒板の基調に馴染む「食材そのものの色」に近づけた。
+   */
+  --color-protein: oklch(0.66 0.1 240);
+  --color-fat: oklch(0.78 0.13 80);
+  --color-carbs: oklch(0.66 0.11 145);
   --color-calories: oklch(0.607 0.213 16.57);
 
   /* ── 食事タイミング別カラー ── */
@@ -60,36 +79,43 @@
  *
  * 設計判断:
  *   - dark がデフォルト（:root に定義）。light は :root.light で上書き
- *   - primary（rose-500）はブランド一貫性のため据え置き
- *   - やや高めのコントラスト（WCAG AAA 7:1 以上）
- *   - card を背景と同色（純白）にし、border で境界を表現
+ *   - primary（朱色）はブランド一貫性のため据え置き
+ *   - やや高めのコントラスト（WCAG AAA 7:1 以上。#2b2620 on #e7dfc7 で実測 11.26:1）
+ *   - 「食堂の掲示板」提案の昼=コルクボード。純白ではなく生成りの紙色を基調にする
  * ==================================================================== */
 
 :root.light {
   /* ── Surface Colors ── */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.13 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.13 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.13 0 0);
+  --background: #e7dfc7;
+  --foreground: #2b2620;
+  --card: #f3edd9;
+  --card-foreground: #2b2620;
+  --popover: #f3edd9;
+  --popover-foreground: #2b2620;
 
   /* ── Brand Colors ── */
   --primary: oklch(0.607 0.213 16.57);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.96 0 0);
-  --secondary-foreground: oklch(0.13 0 0);
-  --accent: oklch(0.96 0 0);
-  --accent-foreground: oklch(0.13 0 0);
+  --secondary: #eadfbc;
+  --secondary-foreground: #2b2620;
+  --accent: #eadfbc;
+  --accent-foreground: #2b2620;
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(1 0 0);
 
   /* ── Muted / Borders ── */
-  --muted: oklch(0.96 0 0);
-  --muted-foreground: oklch(0.45 0 0);
-  --border: oklch(0.9 0 0);
-  --input: oklch(0.9 0 0);
-  --ring: oklch(0.45 0 0);
+  --muted: #eadfbc;
+  --muted-foreground: #6b6152;
+  --border: #c9bc94;
+  --input: #c9bc94;
+  --ring: #453f30;
+
+  /* ── 黒板パネル専用トークン ──
+   * 昼テーマでも黒板は変わらず暗い（コルクボードに掛かった黒板、という物理メタファー）。
+   */
+  --board: #2b372e;
+  --board-foreground: #ede6d2;
+  --board-muted: #9fae97;
 }
 
 /* Tailwind テーマ　*/
@@ -115,6 +141,9 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-board: var(--board);
+  --color-board-foreground: var(--board-foreground);
+  --color-board-muted: var(--board-muted);
 
   /* Nutrition Colors */
   --color-protein: var(--color-protein);
@@ -136,5 +165,16 @@
 
   /* Font Family */
   --font-sans: "Noto Sans JP", system-ui, sans-serif;
+}
+
+/* ── 家計簿ふうの罫線背景（分析ページ用、ADR #21） ──
+ * --border を薄く重ねた方眼。数値・グラフの可読性を優先し、
+ * 分析ページの主要カードのみに限定して適用する（Cardコンポーネント自体は変更しない）。
+ */
+.bg-ledger {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--border) 55%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--border) 55%, transparent) 1px, transparent 1px);
+  background-size: 100% 22px, 24px 100%;
 }
 
