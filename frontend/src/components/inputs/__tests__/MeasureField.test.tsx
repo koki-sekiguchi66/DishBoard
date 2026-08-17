@@ -59,6 +59,38 @@ describe("MeasureField コンポーネント", () => {
     expect(input).toHaveValue("12.34");
   });
 
+  it("全角数字と全角句読点・カンマを小数点として正規化する", async () => {
+    const user = userEvent.setup();
+    const Controlled = () => {
+      const [value, setValue] = useState("");
+      return (
+        <MeasureField label="炭水化物" unit="g" value={value} onChange={setValue} />
+      );
+    };
+    render(<Controlled />);
+
+    const input = screen.getByLabelText("炭水化物（g）");
+    await user.type(input, "１２．５");
+
+    expect(input).toHaveValue("12.5");
+  });
+
+  it("カンマを小数点として扱う", async () => {
+    const user = userEvent.setup();
+    const Controlled = () => {
+      const [value, setValue] = useState("");
+      return (
+        <MeasureField label="炭水化物" unit="g" value={value} onChange={setValue} />
+      );
+    };
+    render(<Controlled />);
+
+    const input = screen.getByLabelText("炭水化物（g）");
+    await user.type(input, "12,5");
+
+    expect(input).toHaveValue("12.5");
+  });
+
   it("+ ボタンで step ぶん増える", async () => {
     const user = userEvent.setup();
     setup({ value: "10", step: 5 });
@@ -116,6 +148,28 @@ describe("MeasureField コンポーネント", () => {
     await user.tab();
 
     expect(onChange).toHaveBeenCalledWith("5");
+  });
+
+  it("精密モードをONにすると + ボタンの刻みが1/10になる", async () => {
+    const user = userEvent.setup();
+    setup({ value: "10", step: 1 });
+
+    await user.click(screen.getByRole("button", { name: "炭水化物を精密モードにする（刻み幅を1/10にして小数点以下を調整しやすくする）" }));
+    await user.click(screen.getByRole("button", { name: "炭水化物を増やす" }));
+
+    expect(onChange).toHaveBeenCalledWith("10.1");
+  });
+
+  it("精密モードは再度押すと解除できる", async () => {
+    const user = userEvent.setup();
+    setup({ value: "10", step: 1 });
+
+    const toggle = screen.getByRole("button", { name: "炭水化物を精密モードにする（刻み幅を1/10にして小数点以下を調整しやすくする）" });
+    await user.click(toggle);
+    await user.click(screen.getByRole("button", { name: "炭水化物の精密モードを解除（刻み幅を戻す）" }));
+    await user.click(screen.getByRole("button", { name: "炭水化物を増やす" }));
+
+    expect(onChange).toHaveBeenCalledWith("11");
   });
 
   it("Enter で次の数値欄へ移る", async () => {
