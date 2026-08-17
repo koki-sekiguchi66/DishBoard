@@ -4,11 +4,13 @@ import tempfile
 from pathlib import Path
 from datetime import date
 
+from django.db import IntegrityError, transaction
 from django.db.models import Count
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets, generics, permissions
 from rest_framework.decorators import api_view, action, permission_classes, parser_classes
+from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import AllowAny
 from django.http import JsonResponse
@@ -187,11 +189,29 @@ class CustomFoodViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return CustomFood.objects.filter(user=self.request.user).order_by('name')
 
+    def _save_or_raise_duplicate(self, serializer):
+        """同名Myアイテムの重複を400として返す。
+
+        CustomFood.Meta.unique_together は (user, name) だが、user は
+        read_only_fields でシリアライザの validated_data に含まれないため、
+        DRF は対応する UniqueTogetherValidator を生成しない。そのため
+        重複作成時は DB の IntegrityError がそのまま漏れて500になっていた。
+        atomic() で囲むのは、外側にトランザクションがある状況
+        （pytest-django のテストや将来 ATOMIC_REQUESTS を有効にした場合）でも
+        IntegrityError 発生後にセーブポイントだけ巻き戻し、後続のクエリを
+        「トランザクションが壊れている」エラーにしないため。
+        """
+        try:
+            with transaction.atomic():
+                serializer.save(user=self.request.user)
+        except IntegrityError:
+            raise ValidationError({'name': 'この名前のMyアイテムは既に登録されています'})
+
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        self._save_or_raise_duplicate(serializer)
 
     def perform_update(self, serializer):
-        serializer.save(user=self.request.user)
+        self._save_or_raise_duplicate(serializer)
 
     @action(detail=False, methods=['post'])
     def create_from_meal(self, request):

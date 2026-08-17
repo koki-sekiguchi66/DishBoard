@@ -240,6 +240,55 @@ class TestCustomFoodValidation:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
+class TestCustomFoodDuplicateName:
+    """同名Myアイテムの重複作成・更新のテスト
+
+    CustomFood.Meta.unique_together は (user, name) だが、user は
+    read_only のため DRF が UniqueTogetherValidator を生成せず、
+    重複時に DB の IntegrityError が素通りして500になっていた不具合の回帰テスト。
+    """
+
+    @pytest.fixture(autouse=True)
+    def setup(self, authenticated_client, user, custom_food):
+        self.client = authenticated_client
+        self.user = user
+        self.food = custom_food
+        self.url = '/api/foods/custom/'
+
+    def test_create_with_duplicate_name_returns_400(self):
+        """既存と同じ名前で作成すると500ではなく400になる"""
+        data = {
+            'name': self.food.name,
+            'calories_per_100g': 100,
+            'protein_per_100g': 5,
+            'fat_per_100g': 3,
+            'carbs_per_100g': 15,
+        }
+        response = self.client.post(self.url, data)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert CustomFood.objects.filter(user=self.user, name=self.food.name).count() == 1
+
+    def test_update_to_duplicate_name_returns_400(self):
+        """別アイテムを既存と同じ名前へ更新すると500ではなく400になる"""
+        other = CustomFood.objects.create(
+            user=self.user,
+            name='別のMyアイテム',
+            calories_per_100g=100,
+            protein_per_100g=5,
+            fat_per_100g=3,
+            carbs_per_100g=15,
+        )
+        data = {
+            'name': self.food.name,
+            'calories_per_100g': 100,
+            'protein_per_100g': 5,
+            'fat_per_100g': 3,
+            'carbs_per_100g': 15,
+        }
+        response = self.client.put(f'{self.url}{other.id}/', data)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
 # =============================================================================
 # Django TestCase ベースのテスト
 # =============================================================================
