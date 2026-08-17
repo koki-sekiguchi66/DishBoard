@@ -5,7 +5,7 @@ Django + DRF + PostgreSQL / React + TypeScript / GCP 上の Docker Compose。
 
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — システム構成・データモデル・処理フロー（まずここを読む）
 - **[docs-public/decisions.md](docs-public/decisions.md)** — 主要な設計判断を「決定 / 背景 / 代替案 / 理由 / トレードオフ」で記録
-- **[docs-public/ui-design-proposal.md](docs-public/ui-design-proposal.md)** — UIデザイン刷新の提案（未決定）
+- **[docs-public/ui-design-proposal.md](docs-public/ui-design-proposal.md)** — UIデザイン刷新の検討過程（決定は decisions.md #21）
 
 ---
 
