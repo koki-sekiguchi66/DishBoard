@@ -261,6 +261,9 @@ GitHub Actions（cron）→ SSH → python manage.py update_cafeteria_menus
 テーマの選択は `localStorage` に保存し、**`index.html` のインラインスクリプトが
 React のマウント前にクラスを付与する**ことで、初回描画時のちらつきを防いでいる。
 
+現行の配色は shadcn/ui の既定に近く、汎用的な印象が課題として認識されている。
+「食堂の掲示板」をコンセプトとした刷新案を検討中（→ [docs-public/ui-design-proposal.md](docs-public/ui-design-proposal.md)、未決定）。
+
 ---
 
 ## 8. 品質の担保

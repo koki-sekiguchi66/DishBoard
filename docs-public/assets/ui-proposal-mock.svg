@@ -1,0 +1,154 @@
+<svg viewBox="0 0 920 520" xmlns="http://www.w3.org/2000/svg" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif">
+  <rect x="0" y="0" width="920" height="520" fill="#faf7f0"/>
+
+  <!-- ラベル -->
+  <text x="20" y="18" font-size="13" font-weight="700" fill="#6b6152">昼（ライト・コルクボード基調）</text>
+  <text x="480" y="18" font-size="13" font-weight="700" fill="#6b6152">夜（ダーク・黒板基調）</text>
+
+  <!-- ===== ライトパネル ===== -->
+  <g>
+    <rect x="20" y="26" width="420" height="416" rx="10" fill="#e7dfc7" stroke="#c9bc94"/>
+
+    <!-- 黒板ヘッダー -->
+    <rect x="36" y="42" width="388" height="150" rx="8" fill="#2b372e"/>
+    <path d="M66,68 C69,68 71,69.5 72.5,72.5 L92,112 C93.5,115 92.5,119 89,120 L43,120 C39.5,119 38.5,115 40,112 L59.5,72.5 C61,69.5 63,68 66,68 Z" fill="#ede6d2" transform="translate(0,-8) scale(0.42)" />
+    <g transform="translate(48,58) scale(0.4)">
+      <path d="M50,8 C54,8 56,10 58,14 L88,78 C90,82 89,88 84,90 L16,90 C11,88 10,82 12,78 L42,14 C44,10 46,8 50,8 Z" fill="#ede6d2"/>
+      <path d="M16,66 L84,66 L84,90 L16,90 Z" fill="#2b372e" opacity="0.85"/>
+    </g>
+    <text x="100" y="86" font-size="19" font-weight="700" fill="#ede6d2">今日の献立</text>
+    <path d="M100,96 Q130,92 165,95 T232,94" stroke="#ede6d2" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.6"/>
+
+    <g font-size="12" fill="#9fae97">
+      <rect x="52" y="150" width="64" height="24" rx="5" fill="none" stroke="#9fae97"/>
+      <text x="84" y="166" text-anchor="middle">朝食</text>
+      <rect x="122" y="150" width="64" height="24" rx="5" fill="#ede6d2"/>
+      <text x="154" y="166" text-anchor="middle" fill="#2b372e" font-weight="700">昼食</text>
+      <rect x="192" y="150" width="64" height="24" rx="5" fill="none" stroke="#9fae97"/>
+      <text x="224" y="166" text-anchor="middle">夕食</text>
+      <rect x="262" y="150" width="64" height="24" rx="5" fill="none" stroke="#9fae97"/>
+      <text x="294" y="166" text-anchor="middle">間食</text>
+    </g>
+
+    <!-- 食券 -->
+    <rect x="36" y="208" width="388" height="90" rx="5" fill="#f3edd9" stroke="#c9bc94"/>
+    <line x1="58" y1="212" x2="58" y2="294" stroke="#c9bc94" stroke-dasharray="2 4"/>
+    <circle cx="58" cy="222" r="4" fill="#e7dfc7"/>
+    <circle cx="58" cy="240" r="4" fill="#e7dfc7"/>
+    <circle cx="58" cy="258" r="4" fill="#e7dfc7"/>
+    <circle cx="58" cy="276" r="4" fill="#e7dfc7"/>
+    <text x="72" y="232" font-size="10.5" letter-spacing="0.5" fill="#6b6152">昼食 ・ 12:40</text>
+    <text x="72" y="252" font-size="15" font-weight="700" fill="#2b2620">鶏むね肉のソテー定食</text>
+    <text x="72" y="270" font-size="11.5" fill="#6b6152">鶏むね肉 / 白米 / わかめの味噌汁</text>
+    <circle cx="372" cy="253" r="30" fill="none" stroke="#c43b24" stroke-width="2" transform="rotate(-8 372 253)"/>
+    <text x="372" y="250" font-size="15" font-weight="700" text-anchor="middle" fill="#c43b24" font-family="ui-monospace,monospace" transform="rotate(-8 372 253)">512</text>
+    <text x="372" y="262" font-size="8" text-anchor="middle" fill="#c43b24" font-family="ui-monospace,monospace" transform="rotate(-8 372 253)">KCAL</text>
+
+    <!-- PFC ゲージ -->
+    <g font-size="11" fill="#6b6152">
+      <text x="36" y="322">たんぱく質</text>
+      <rect x="112" y="312" width="312" height="12" rx="2" fill="#eadfbc"/>
+      <rect x="112" y="312" width="200" height="12" rx="2" fill="#3e6e8e"/>
+      <text x="36" y="344">脂質</text>
+      <rect x="112" y="334" width="312" height="12" rx="2" fill="#eadfbc"/>
+      <rect x="112" y="334" width="128" height="12" rx="2" fill="#b98a1e"/>
+      <text x="36" y="366">炭水化物</text>
+      <rect x="112" y="356" width="312" height="12" rx="2" fill="#eadfbc"/>
+      <rect x="112" y="356" width="244" height="12" rx="2" fill="#6f8354"/>
+    </g>
+
+    <!-- 家計簿ふうミニ棒グラフ -->
+    <rect x="36" y="384" width="388" height="58" rx="6" fill="#f3edd9" stroke="#c9bc94"/>
+    <g>
+      <rect x="52" y="404" width="14" height="30" fill="#3e6e8e"/>
+      <rect x="76" y="392" width="14" height="42" fill="#3e6e8e"/>
+      <rect x="100" y="414" width="14" height="20" fill="#3e6e8e"/>
+      <rect x="124" y="382" width="14" height="52" fill="#c43b24"/>
+      <rect x="148" y="400" width="14" height="34" fill="#3e6e8e"/>
+      <rect x="172" y="420" width="14" height="14" fill="#3e6e8e"/>
+      <rect x="196" y="408" width="14" height="26" fill="#3e6e8e"/>
+    </g>
+    <text x="330" y="418" font-size="10.5" fill="#6b6152">週の記録</text>
+  </g>
+
+  <!-- ===== ダークパネル ===== -->
+  <g>
+    <rect x="480" y="26" width="420" height="416" rx="10" fill="#1c2420" stroke="#3b4a3f"/>
+
+    <rect x="496" y="42" width="388" height="150" rx="8" fill="#14201a"/>
+    <g transform="translate(508,58) scale(0.4)">
+      <path d="M50,8 C54,8 56,10 58,14 L88,78 C90,82 89,88 84,90 L16,90 C11,88 10,82 12,78 L42,14 C44,10 46,8 50,8 Z" fill="#ede6d2"/>
+      <path d="M16,66 L84,66 L84,90 L16,90 Z" fill="#14201a" opacity="0.85"/>
+    </g>
+    <text x="560" y="86" font-size="19" font-weight="700" fill="#ede6d2">今日の献立</text>
+    <path d="M560,96 Q590,92 625,95 T692,94" stroke="#ede6d2" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.5"/>
+
+    <g font-size="12" fill="#7e8c79">
+      <rect x="512" y="150" width="64" height="24" rx="5" fill="none" stroke="#7e8c79"/>
+      <text x="544" y="166" text-anchor="middle">朝食</text>
+      <rect x="582" y="150" width="64" height="24" rx="5" fill="#ede6d2"/>
+      <text x="614" y="166" text-anchor="middle" fill="#14201a" font-weight="700">昼食</text>
+      <rect x="652" y="150" width="64" height="24" rx="5" fill="none" stroke="#7e8c79"/>
+      <text x="684" y="166" text-anchor="middle">夕食</text>
+      <rect x="722" y="150" width="64" height="24" rx="5" fill="none" stroke="#7e8c79"/>
+      <text x="754" y="166" text-anchor="middle">間食</text>
+    </g>
+
+    <rect x="496" y="208" width="388" height="90" rx="5" fill="#26312a" stroke="#3b4a3f"/>
+    <line x1="518" y1="212" x2="518" y2="294" stroke="#3b4a3f" stroke-dasharray="2 4"/>
+    <circle cx="518" cy="222" r="4" fill="#1c2420"/>
+    <circle cx="518" cy="240" r="4" fill="#1c2420"/>
+    <circle cx="518" cy="258" r="4" fill="#1c2420"/>
+    <circle cx="518" cy="276" r="4" fill="#1c2420"/>
+    <text x="532" y="232" font-size="10.5" letter-spacing="0.5" fill="#9fae97">昼食 ・ 学食</text>
+    <text x="532" y="252" font-size="15" font-weight="700" fill="#ede6d2">日替わりカレーセット</text>
+    <text x="532" y="270" font-size="11.5" fill="#9fae97">学食メニューから記録</text>
+    <circle cx="832" cy="253" r="30" fill="none" stroke="#e2593b" stroke-width="2" transform="rotate(-8 832 253)"/>
+    <text x="832" y="250" font-size="15" font-weight="700" text-anchor="middle" fill="#e2593b" font-family="ui-monospace,monospace" transform="rotate(-8 832 253)">680</text>
+    <text x="832" y="262" font-size="8" text-anchor="middle" fill="#e2593b" font-family="ui-monospace,monospace" transform="rotate(-8 832 253)">KCAL</text>
+
+    <g font-size="11" fill="#9fae97">
+      <text x="496" y="322">たんぱく質</text>
+      <rect x="572" y="312" width="312" height="12" rx="2" fill="#202b24"/>
+      <rect x="572" y="312" width="180" height="12" rx="2" fill="#7fb2d8"/>
+      <text x="496" y="344">脂質</text>
+      <rect x="572" y="334" width="312" height="12" rx="2" fill="#202b24"/>
+      <rect x="572" y="334" width="150" height="12" rx="2" fill="#d8ae4e"/>
+      <text x="496" y="366">炭水化物</text>
+      <rect x="572" y="356" width="312" height="12" rx="2" fill="#202b24"/>
+      <rect x="572" y="356" width="260" height="12" rx="2" fill="#9bb37e"/>
+    </g>
+
+    <rect x="496" y="384" width="388" height="58" rx="6" fill="#26312a" stroke="#3b4a3f"/>
+    <g>
+      <rect x="512" y="404" width="14" height="30" fill="#7fb2d8"/>
+      <rect x="536" y="392" width="14" height="42" fill="#7fb2d8"/>
+      <rect x="560" y="414" width="14" height="20" fill="#7fb2d8"/>
+      <rect x="584" y="382" width="14" height="52" fill="#e2593b"/>
+      <rect x="608" y="400" width="14" height="34" fill="#7fb2d8"/>
+      <rect x="632" y="420" width="14" height="14" fill="#7fb2d8"/>
+      <rect x="656" y="408" width="14" height="26" fill="#7fb2d8"/>
+    </g>
+    <text x="790" y="418" font-size="10.5" fill="#9fae97">週の記録</text>
+  </g>
+
+  <!-- ===== パレット ===== -->
+  <text x="20" y="466" font-size="12" font-weight="700" fill="#6b6152">配色トークン（左: 昼 / 右: 夜）</text>
+  <g font-size="9.5" fill="#6b6152">
+    <rect x="20" y="476" width="52" height="28" rx="3" fill="#e7dfc7" stroke="#c9bc94"/><text x="26" y="514">bg</text>
+    <rect x="78" y="476" width="52" height="28" rx="3" fill="#f3edd9" stroke="#c9bc94"/><text x="84" y="514">surface</text>
+    <rect x="136" y="476" width="52" height="28" rx="3" fill="#2b372e"/><text x="142" y="514">board</text>
+    <rect x="194" y="476" width="52" height="28" rx="3" fill="#c43b24"/><text x="200" y="514">stamp</text>
+    <rect x="252" y="476" width="52" height="28" rx="3" fill="#3e6e8e"/><text x="258" y="514">sakana</text>
+    <rect x="310" y="476" width="52" height="28" rx="3" fill="#b98a1e"/><text x="316" y="514">mustard</text>
+    <rect x="368" y="476" width="52" height="28" rx="3" fill="#6f8354"/><text x="374" y="514">matcha</text>
+
+    <rect x="480" y="476" width="52" height="28" rx="3" fill="#1c2420" stroke="#3b4a3f"/><text x="486" y="514">bg</text>
+    <rect x="538" y="476" width="52" height="28" rx="3" fill="#26312a" stroke="#3b4a3f"/><text x="544" y="514">surface</text>
+    <rect x="596" y="476" width="52" height="28" rx="3" fill="#14201a"/><text x="602" y="514">board</text>
+    <rect x="654" y="476" width="52" height="28" rx="3" fill="#e2593b"/><text x="660" y="514">stamp</text>
+    <rect x="712" y="476" width="52" height="28" rx="3" fill="#7fb2d8"/><text x="718" y="514">sakana</text>
+    <rect x="770" y="476" width="52" height="28" rx="3" fill="#d8ae4e"/><text x="776" y="514">mustard</text>
+    <rect x="828" y="476" width="52" height="28" rx="3" fill="#9bb37e"/><text x="834" y="514">matcha</text>
+  </g>
+</svg>
