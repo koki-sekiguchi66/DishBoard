@@ -15,12 +15,13 @@ const CameraCapture = ({ show, onClose, onCapture }: { show: boolean; onClose: (
 
   const webcamRef = useRef<Webcam>(null);
 
-  // OCR の精度は解像度に強く依存するため、取得できる最大解像度を要求する
+  // OCR の精度は解像度に強く依存するため、取得できる最大解像度を要求する。
+  // aspectRatio は指定しない: 栄養成分表示は縦長のラベルも多く、16:9 に固定すると
+  // 実際に映っている範囲の画素を撮影前に切り捨ててしまう
   const videoConstraints = {
     width: { ideal: 3840 },
     height: { ideal: 2160 },
     facingMode: 'environment',
-    aspectRatio: 16 / 9,
   };
 
   const handleUserMedia = useCallback(() => {
@@ -35,31 +36,42 @@ const CameraCapture = ({ show, onClose, onCapture }: { show: boolean; onClose: (
     setIsReady(false);
   }, []);
 
-  const handleCapture = useCallback(() => {
+  const handleCapture = useCallback(async () => {
     if (!webcamRef.current) return;
 
-    console.log('撮影開始');
+    // ImageCapture はプレビュー用の映像ストリームを経由せずカメラの静止画撮影
+    // パイプラインを直接叩けるため、対応端末（主に Android Chrome）では
+    // 映像プレビューの解像度上限を超えた写真解像度で撮れる
+    const track = webcamRef.current.stream?.getVideoTracks()[0];
+    if (track && typeof ImageCapture !== 'undefined') {
+      try {
+        const photo = await new ImageCapture(track).takePhoto();
+        console.log('撮影完了(ImageCapture):', photo.size, 'bytes');
+        onCapture(photo);
+        handleClose();
+        return;
+      } catch (err) {
+        console.warn('ImageCapture.takePhoto に失敗、映像フレームの取得にフォールバックします:', err);
+      }
+    }
 
-    const imageSrc = webcamRef.current.getScreenshot({
-      width: 3840,
-      height: 2160,
-    });
-
+    // フォールバック: 映像プレビューの現在のフレームを実解像度のまま切り出す
+    // （Webcam の forceScreenshotSourceSize により video.videoWidth/Height で描画される）
+    const imageSrc = webcamRef.current.getScreenshot();
     if (!imageSrc) {
       console.error('Screenshot failed');
       return;
     }
 
-    fetch(imageSrc)
-      .then(res => res.blob())
-      .then(blob => {
-        console.log('撮影完了:', blob.size, 'bytes');
-        onCapture(blob);
-        handleClose();
-      })
-      .catch(err => {
-        console.error('撮影エラー:', err);
-      });
+    try {
+      const res = await fetch(imageSrc);
+      const blob = await res.blob();
+      console.log('撮影完了:', blob.size, 'bytes');
+      onCapture(blob);
+      handleClose();
+    } catch (err) {
+      console.error('撮影エラー:', err);
+    }
   }, [onCapture]);
 
   const handleClose = () => {
@@ -93,6 +105,7 @@ const CameraCapture = ({ show, onClose, onCapture }: { show: boolean; onClose: (
               audio={false}
               screenshotFormat="image/jpeg"
               screenshotQuality={1.0}
+              forceScreenshotSourceSize
               videoConstraints={videoConstraints}
               onUserMedia={handleUserMedia}
               onUserMediaError={handleUserMediaError}

@@ -5,6 +5,7 @@ import {
   Store,
   Pencil,
   Calendar,
+  ScanLine,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -28,13 +29,14 @@ interface MenuBuilderPanelProps {
   menuBuilder: MenuBuilderReturn;
 }
 
-type InputMethod = "search" | "myItems" | "myMenus" | "cafeteria" | "manual";
+type InputMethod = "search" | "myItems" | "myMenus" | "cafeteria" | "ocr" | "manual";
 
 const INPUT_METHODS: { id: InputMethod; label: string; icon: typeof Search }[] = [
   { id: "search", label: "検索", icon: Search },
   { id: "myItems", label: "Myアイテム", icon: EggFried },
   { id: "myMenus", label: "Myメニュー", icon: BookmarkCheck },
   { id: "cafeteria", label: "食堂", icon: Store },
+  { id: "ocr", label: "撮影", icon: ScanLine },
   { id: "manual", label: "手動", icon: Pencil },
 ];
 
@@ -176,16 +178,11 @@ export default function MenuBuilderPanel({ menuBuilder }: MenuBuilderPanelProps)
           {activeInputMethod === "cafeteria" && (
             <CafeteriaSelector onMenuSelected={handleFoodSelected} />
           )}
+          {activeInputMethod === "ocr" && (
+            <OCRButton onNutritionDetected={handleFoodSelected} />
+          )}
           {activeInputMethod === "manual" && (
-            <>
-              <ManualInputForm onAdd={handleFoodSelected} />
-              <div className="mt-3">
-                <div className="mb-2 text-center">
-                  <span className="text-xs text-muted-foreground">または</span>
-                </div>
-                <OCRButton onNutritionDetected={handleFoodSelected} />
-              </div>
-            </>
+            <ManualInputForm onAdd={handleFoodSelected} />
           )}
         </div>
       </CardContent>

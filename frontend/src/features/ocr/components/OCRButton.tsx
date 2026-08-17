@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState, type ChangeEvent } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, Camera } from 'lucide-react';
+import { Loader2, Camera, ImageUp } from 'lucide-react';
 import { toast } from 'sonner';
 import CameraCapture from './CameraCapture';
 import ImageCropModal from './ImageCropModal';
@@ -15,10 +15,19 @@ const OCRButton = ({ onNutritionDetected }: { onNutritionDetected: (item: FoodSe
   const [capturedImage, setCapturedImage] = useState<Blob | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [ocrResult, setOcrResult] = useState(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const handleCapture = (imageBlob: Blob) => {
     setCapturedImage(imageBlob);
     setShowCrop(true);
+  };
+
+  const handleGallerySelect = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // 同じファイルを選び直しても change が発火するようにリセットする
+    e.target.value = '';
+    if (!file) return;
+    handleCapture(file);
   };
 
   const handleCrop = async (croppedBlob: Blob) => {
@@ -69,11 +78,11 @@ const OCRButton = ({ onNutritionDetected }: { onNutritionDetected: (item: FoodSe
     }
   };
 
-  const handleConfirm = (nutritionData: Record<string, number>) => {
+  const handleConfirm = (itemName: string, nutritionData: Record<string, number>) => {
     const menuItem = {
       item_type: 'standard',
       item_id: 0,
-      item_name: 'OCR認識アイテム',
+      item_name: itemName,
       amount_grams: 100,
       calories: nutritionData.calories || 0,
       protein: nutritionData.protein || 0,
@@ -102,24 +111,36 @@ const OCRButton = ({ onNutritionDetected }: { onNutritionDetected: (item: FoodSe
 
   return (
     <>
-      <Button
-        variant="outline"
-        onClick={() => setShowCamera(true)}
-        disabled={isProcessing}
-        className="w-full"
-      >
-        {isProcessing ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            解析中...
-          </>
-        ) : (
-          <>
+      {isProcessing ? (
+        <Button variant="outline" disabled className="w-full">
+          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          解析中...
+        </Button>
+      ) : (
+        // スマートフォンの狭い画面幅では2列だと日本語ラベルがボタン幅を超えてしまうため縦積みにする
+        <div className="flex flex-col gap-2">
+          <Button variant="outline" onClick={() => setShowCamera(true)} className="w-full">
             <Camera className="h-4 w-4 mr-2" />
-            パッケージを撮影して追加
-          </>
-        )}
-      </Button>
+            カメラで撮影
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => galleryInputRef.current?.click()}
+            className="w-full"
+          >
+            <ImageUp className="h-4 w-4 mr-2" />
+            ギャラリーから選択
+          </Button>
+        </div>
+      )}
+
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleGallerySelect}
+      />
 
       <CameraCapture
         show={showCamera}

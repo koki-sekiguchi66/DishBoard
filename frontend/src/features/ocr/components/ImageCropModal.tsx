@@ -39,6 +39,10 @@ const ImageCropModal = ({ show, imageBlob, onClose, onCrop }: { show: boolean; i
 
   const MIN_OUTPUT_WIDTH = 1200;
   const MIN_OUTPUT_HEIGHT = 900;
+  // ギャラリー選択やネイティブ撮影で数千万画素の原寸画像が渡ってきても、
+  // バックエンドの上限（10MB）を安全に下回るよう長辺を頭打ちにする。
+  // OCR対象はラベルの文字なので、この解像度を超えても認識精度は上がらない
+  const MAX_OUTPUT_LONG_EDGE = 4000;
 
   useEffect(() => {
     if (imageBlob) {
@@ -242,20 +246,28 @@ const ImageCropModal = ({ show, imageBlob, onClose, onCrop }: { show: boolean; i
         return;
       }
 
-      // 拡大倍率を計算
+      // 拡大倍率を計算（小さすぎる切り抜きを最低サイズまで引き上げる）
       const scaleForWidth = cropWidth < MIN_OUTPUT_WIDTH ? MIN_OUTPUT_WIDTH / cropWidth : 1;
       const scaleForHeight = cropHeight < MIN_OUTPUT_HEIGHT ? MIN_OUTPUT_HEIGHT / cropHeight : 1;
       const upscaleFactor = Math.max(scaleForWidth, scaleForHeight);
 
-      const outputWidth = Math.round(cropWidth * upscaleFactor);
-      const outputHeight = Math.round(cropHeight * upscaleFactor);
+      // 縮小倍率を計算（拡大後の長辺が上限を超えていたら縮める）
+      const upscaledLongEdge = Math.max(cropWidth, cropHeight) * upscaleFactor;
+      const downscaleFactor =
+        upscaledLongEdge > MAX_OUTPUT_LONG_EDGE
+          ? MAX_OUTPUT_LONG_EDGE / upscaledLongEdge
+          : 1;
 
-      console.log('[ImageCropModal] Upscale calculation:', {
+      const scaleFactor = upscaleFactor * downscaleFactor;
+      const outputWidth = Math.round(cropWidth * scaleFactor);
+      const outputHeight = Math.round(cropHeight * scaleFactor);
+
+      console.log('[ImageCropModal] Scale calculation:', {
         MIN_OUTPUT_WIDTH,
         MIN_OUTPUT_HEIGHT,
-        scaleForWidth: scaleForWidth.toFixed(2),
-        scaleForHeight: scaleForHeight.toFixed(2),
+        MAX_OUTPUT_LONG_EDGE,
         upscaleFactor: upscaleFactor.toFixed(2),
+        downscaleFactor: downscaleFactor.toFixed(2),
       });
       console.log('[ImageCropModal] Output size:', outputWidth, 'x', outputHeight);
 
@@ -289,7 +301,7 @@ const ImageCropModal = ({ show, imageBlob, onClose, onCrop }: { show: boolean; i
             console.log('[ImageCropModal] ===== トリミング成功 =====');
             console.log('[ImageCropModal] Original crop size:', cropWidth, 'x', cropHeight);
             console.log('[ImageCropModal] Output size:', outputWidth, 'x', outputHeight);
-            console.log('[ImageCropModal] Upscale factor:', upscaleFactor.toFixed(2) + 'x');
+            console.log('[ImageCropModal] Scale factor:', scaleFactor.toFixed(2) + 'x');
             console.log('[ImageCropModal] Cropped blob size:', blob.size, 'bytes', '(' + (blob.size / 1024).toFixed(1) + ' KB)');
             console.log('[ImageCropModal] Cropped blob type:', blob.type);
 

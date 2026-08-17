@@ -12,7 +12,7 @@ import type {
 } from "@/types";
 import { EMPTY_NUTRITION, FULL_NUTRITION_KEYS } from "@/types";
 
-type InputMethod = "search" | "myItems" | "myMenus" | "cafeteria" | "manual";
+type InputMethod = "search" | "myItems" | "myMenus" | "cafeteria" | "ocr" | "manual";
 
 export interface MenuBuilderReturn {
   recordDate: string;
