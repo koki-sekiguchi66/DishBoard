@@ -49,6 +49,7 @@ vi.mock("@/features/meals", () => ({
       </div>
     ) : null,
   mealApi: mealApiMock,
+  useQuickRepeat: () => ({ repeatMeal: vi.fn(), isRepeating: false }),
 }));
 
 vi.mock("@/features/weights", () => ({ WeightForm: () => <div /> }));

@@ -3,7 +3,7 @@ import { UtensilsCrossed, Scale } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { MealForm, EditMealModal, mealApi } from "@/features/meals";
+import { MealForm, EditMealModal, mealApi, useQuickRepeat } from "@/features/meals";
 import { WeightForm } from "@/features/weights";
 import { SaveAsMenuModal } from "@/features/customMenus";
 import { InstallPWA } from "@/components/PWA";
@@ -33,6 +33,7 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
   const { meals, allMeals, weights, dailySummary, selectedDate, message } = data;
 
   const { goals } = useGoalSettings();
+  const { repeatMeal, isRepeating } = useQuickRepeat();
 
   // data.message はデータ取得・削除失敗時に立つが、UI側で表示先を持っていなかったため
   // ユーザーには何も伝わらず失敗が握りつぶされていた。sonner のトーストで拾う
@@ -62,6 +63,11 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
       console.error("Failed to fetch meal detail", error);
       toast.error("食事記録の詳細取得に失敗しました。");
     }
+  };
+
+  const handleMealRepeat = async (pastMeal: MealRecord) => {
+    const created = await repeatMeal(pastMeal, selectedDate);
+    if (created) actions.handleMealCreated(created);
   };
 
   const mealFormSlot = useMemo(
@@ -103,11 +109,14 @@ const Dashboard = ({ handleLogout }: DashboardProps) => {
       selectedDate={selectedDate}
       onDateChange={actions.handleDateChange}
       meals={meals}
+      allMeals={allMeals}
       dailySummary={dailySummary}
       goals={goals}
       onMealEdit={handleMealEdit}
       onMealDelete={confirmDelete}
       onMealSaveAsMenu={setSavingMenuMeal}
+      onMealRepeat={handleMealRepeat}
+      isRepeatingMeal={isRepeating}
       mealFormSlot={mealFormSlot}
       weightFormSlot={weightFormSlot}
     />

@@ -1,13 +1,20 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { FoodChipList } from "./FoodChipList";
+import { QuickRepeatChips } from "./QuickRepeatChips";
+import { useCurrentMealTiming } from "../hooks/useCurrentMealTiming";
 import { cn } from "@/lib/utils";
 import type { Meal } from "../types";
+import type { MealRecord, MealTiming } from "@/types";
 
 interface MealTimingTabsProps {
   meals: Meal[];
   onEdit?: (meal: Meal) => void;
   onDelete?: (mealId: number) => void;
   onSaveAsMenu?: (meal: Meal) => void;
+  /** タイミングごとの「よく記録するメニュー」候補。省略するとチップ列を出さない */
+  frequentMeals?: Record<MealTiming, MealRecord[]>;
+  onRepeatMeal?: (meal: MealRecord) => void;
+  isRepeatingMeal?: boolean;
 }
 
 const TIMINGS = [
@@ -22,7 +29,12 @@ export function MealTimingTabs({
   onEdit,
   onDelete,
   onSaveAsMenu,
+  frequentMeals,
+  onRepeatMeal,
+  isRepeatingMeal,
 }: MealTimingTabsProps) {
+  const currentTiming = useCurrentMealTiming();
+
   const groupedMeals = TIMINGS.reduce(
     (acc, timing) => {
       acc[timing.value] = meals.filter((m) => m.meal_timing === timing.value);
@@ -32,7 +44,7 @@ export function MealTimingTabs({
   );
 
   return (
-    <Tabs defaultValue="breakfast" className="w-full">
+    <Tabs defaultValue={currentTiming} className="w-full">
       <TabsList className="grid w-full grid-cols-4 bg-secondary/50">
         {TIMINGS.map((timing) => {
           const count = groupedMeals[timing.value]?.length ?? 0;
@@ -56,6 +68,13 @@ export function MealTimingTabs({
 
       {TIMINGS.map((timing) => (
         <TabsContent key={timing.value} value={timing.value} className="mt-3">
+          {onRepeatMeal && (
+            <QuickRepeatChips
+              suggestions={frequentMeals?.[timing.value] ?? []}
+              onRepeat={onRepeatMeal}
+              isRepeating={isRepeatingMeal}
+            />
+          )}
           <FoodChipList
             meals={groupedMeals[timing.value] ?? []}
             onEdit={onEdit}
