@@ -13,6 +13,7 @@ record_app/
   business_logic/      HTTP を知らない純粋なドメイン処理
     nutrition_calculator.py   食品検索・栄養計算・日次サマリー
     food_search.py            MCP向けの食品名正規化と参考検索
+    custom_food.py            Myアイテムの出典検証と1食分・100g換算
     nutrition_units.py        食塩相当量gからナトリウムmgへの変換
     ocr_processor.py          栄養成分表示ラベルの OCR（Azure AI Vision）
     cafeteria_scraping.py     学食サイトのスクレイピング（3食堂。ADR #31）
@@ -51,6 +52,10 @@ mcp_server/
 - `django_setup.py` を import 時に呼ばない。呼ぶのは `asgi.py` だけ
 - ツールの description は **Claude が読む唯一の仕様書**。単位・副作用の有無・日付形式を必ず書く
 - 既存の `/api/` 向けメソッドを MCP のために書き換えない。必要なら別メソッドを足す
+
+MyアイテムのMCP作成は署名付き下書きと本人確認を経由する。保存栄養値は常に100g基準を維持し、
+`servings` は実重量に換算して明細へ保存する。食事作成の再送キーは `MealCreationRequest` に保持し、
+記録削除後も消さない。処理は `MealService.create_idempotently()` のトランザクション境界を使う。
 
 ## 認証
 

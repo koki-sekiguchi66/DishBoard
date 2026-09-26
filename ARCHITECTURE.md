@@ -283,6 +283,12 @@ GET /api/cafeteria/suggestions/ または MCP ツール suggest_cafeteria_menus
 標準食品の再投入は成分識別子に基づき、過去の記録のスナップショットは更新しない。
 詳細と制約は [MCPの仕様](docs-public/mcp.md) を参照。
 
+Myアイテムは `draft_custom_food` で出典付きの下書きを作り、本人の確認後に署名を検証して
+`create_custom_food` で保存する。保存値は100g基準、表示基準と1食分重量は別に持つ。
+食数指定は実重量に換算してスナップショットへ保存する。
+食事作成にUUIDの再送キーを付けた場合は、`MealCreationRequest` と食事を同一トランザクションで
+保存し、同時実行と再送を同じ記録へ結びつける。削除済みの記録は再作成しない。
+
 ## 7. フロントエンドの設計
 
 ### 状態管理
