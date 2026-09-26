@@ -12,6 +12,8 @@ record_app/
   services.py          複数モデルにまたがる操作。@transaction.atomic で境界を明示
   business_logic/      HTTP を知らない純粋なドメイン処理
     nutrition_calculator.py   食品検索・栄養計算・日次サマリー
+    food_search.py            MCP向けの食品名正規化と参考検索
+    nutrition_units.py        食塩相当量gからナトリウムmgへの変換
     ocr_processor.py          栄養成分表示ラベルの OCR（Azure AI Vision）
     cafeteria_scraping.py     学食サイトのスクレイピング（3食堂。ADR #31）
     cafeteria_advisor.py      残りの目標に合う学食メニューの提案（ADR #30）
@@ -35,7 +37,7 @@ mcp_server/
   context.py       トークン → Django ユーザーの解決とスコープ検査
   validators.py    入力の検証
   formatters.py    モデル → ツール返り値の変換
-  tools.py         ツール本体（T1〜T9）
+  tools.py         ツール本体（参照・下書き・作成・編集・削除）
   server.py        FastMCP の組み立てとツール登録
   asgi.py          uvicorn のエントリポイント
 ```
@@ -103,6 +105,11 @@ pytest + pytest-django（`pytest.ini` で `DJANGO_SETTINGS_MODULE=...settings.de
 |---|---|
 | `load_standard_foods <csv>` | 食品標準成分表 CSV の投入（`update_or_create` で冪等） |
 | `update_cafeteria_menus` | 学食メニューの更新。GitHub Actions cron から SSH 経由で実行 |
+
+成分表はCSVの成分識別子で列を解決する。固定の列番号・スキップ行数へ戻さない。
+学食マスタの `sodium` は食塩相当量g、MCP・Web APIが返す `sodium` はナトリウムmg。
+変換は `nutrition_units.py` を使い、過去のスナップショットを自動で書き換えない。
+検索・削除・再投入の仕様は `docs-public/mcp.md` を参照。
 
 ## 設定
 
