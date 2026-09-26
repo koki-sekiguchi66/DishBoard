@@ -3,7 +3,7 @@
 Google Identity Services（GIS）による認証と、既存 DishBoard アカウントとの連携の仕様。
 **なぜこの構成なのか**を、将来の保守担当者が判断できる粒度で残す。
 
-関連: [decisions.md](decisions.md) の ADR #22〜#27 / [../ARCHITECTURE.md](../ARCHITECTURE.md)
+関連: [ドキュメント一覧](README.md) / [decisions.md](decisions.md) の ADR #22〜#27・#29・#32 / [アーキテクチャ](architecture.md)
 
 ---
 
@@ -191,7 +191,7 @@ client ID は秘密情報ではないが、値がずれると必ず失敗する�
 `GOOGLE_CLIENT_SECRET` は使わない（frontend へ埋め込んではならない）。
 MCP の OAuth クライアントは Claude が動的登録（DCR）するため、固定の client_id / secret も持たない。
 
-> **`VITE_` 変数はビルド時に埋め込まれる。** 値を変えたら frontend イメージの再ビルドが必要。
+> **`VITE_` 変数はビルド時に埋め込まれる。** 本番で値を変えたら、frontend の成果物を同梱する `nginx` イメージの再ビルドが必要。
 > `.env` を書き換えて再起動するだけでは反映されない。
 
 ---
@@ -227,7 +227,8 @@ COOP はヘッダを付けるのが View、既定値を入れるのが middlewar
 
 - **ID トークンのローカル検証**。Google 公開鍵をキャッシュし、毎回の外部通信をなくす。
   鍵ローテーション・`exp`/`iat`・clock skew の扱いを設計する必要がある
-- **認証のレート制限**。Google ログイン / 連携 / token endpoint / DCR / 従来ログイン
+- **OAuth のレート制限**。token endpoint / DCR / 認可用セッションログインの制限を検討する。
+  Web API の従来ログイン・登録・Google ログイン/連携には ScopedRateThrottle を導入済み（ADR #29）
 - **監査ログ**。連携・解除・ログイン成否・拒否理由を、credential や token を含めず記録する
 
 **優先度: 中**

@@ -1,7 +1,27 @@
 # MCPの食品検索・栄養値・食事記録
 
+[ドキュメント一覧](README.md) / [データ設計](data-model.md) / [Web APIとの違い](api.md)
+
 認証とOAuthスコープは [google-authentication.md](google-authentication.md) を参照。
 MCPの入出力定義は `backend/mcp_server/server.py` のツール説明と入力モデルが正本となる。
+
+## ツール一覧
+
+| ツール | スコープ | 用途・副作用 |
+|---|---|---|
+| `search_foods` | `meals:read` | 食品の横断検索。保存しない |
+| `get_daily_nutrition` / `get_nutrition_trend` | `meals:read` | 日次・期間の集計。期間の体重データは `weight:read` がある場合のみ |
+| `list_meal_records` / `get_meal_record` | `meals:read` | 本人の食事一覧・詳細 |
+| `suggest_cafeteria_menus` | `meals:read` | 栄養目標の残りに近い学食の提案 |
+| `draft_meal` | `meals:read` | 食品と分量を解決して確認用の下書きを返す |
+| `draft_custom_food` | `meals:read` | 出典付きMyアイテムの署名付き下書き。保存しない |
+| `create_custom_food` | `meals:write` | 下書きを本人が確認した後に食品を保存 |
+| `create_meal_record` / `update_meal_record` | `meals:write` | 食事の作成・編集。食事作成は再送キーに対応 |
+| `delete_meal_record` | `meals:write` | 本人の確認後に食事と明細を削除 |
+
+体重の書き込みツールや汎用SQL実行ツールは公開していない。
+登録一覧と副作用注釈は [server.py](../backend/mcp_server/server.py)、
+入力スキーマは [tools.py](../backend/mcp_server/tools.py)を参照。
 
 ## 栄養値と成分表
 
