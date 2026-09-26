@@ -407,6 +407,7 @@ async def create_meal_record(
     meal_timing: Literal['breakfast', 'lunch', 'dinner', 'snack'],
     meal_name: str,
     items: list[MealItemInput],
+    idempotency_key: str | None = None,
 ) -> dict:
     """食事記録を作成する。作成された記録の全体を返す。"""
     user = await resolve_user(SCOPE_MEALS_WRITE)
@@ -416,22 +417,30 @@ async def create_meal_record(
     check_write_rate_limit(user.id)
 
     return await sync_to_async(_create_meal_record_sync)(
-        user, target_date, meal_timing, cleaned_name, items
+        user, target_date, meal_timing, cleaned_name, items,
+        validators.validate_idempotency_key(idempotency_key),
     )
 
 
-def _create_meal_record_sync(user, record_date, meal_timing, meal_name, items):
+def _create_meal_record_sync(user, record_date, meal_timing, meal_name, items, idempotency_key=None):
     from record_app.serializers import MealRecordSerializer
+    from record_app.services import MealService
 
-    payload = _build_meal_payload(user, record_date, meal_timing, meal_name, items)
+    def save_meal():
+        payload = _build_meal_payload(user, record_date, meal_timing, meal_name, items)
+        serializer = MealRecordSerializer(data=payload)
+        if not serializer.is_valid():
+            raise ValidationError(f'食事記録を作成できませんでした: {serializer.errors}')
+        return serializer.save(user=user)
 
-    # 既存のシリアライザを使う（明細の作成と @transaction.atomic をそのまま利用）。
-    # user は context['request'] を経由せず明示的に渡す。MCP には request が無い
-    serializer = MealRecordSerializer(data=payload)
-    if not serializer.is_valid():
-        raise ValidationError(f'食事記録を作成できませんでした: {serializer.errors}')
-
-    meal = serializer.save(user=user)
+    request_data = {
+        'record_date': record_date.isoformat(), 'meal_timing': meal_timing, 'meal_name': meal_name,
+        'items': [item.model_dump() for item in items],
+    }
+    try:
+        meal = MealService.create_idempotently(user, idempotency_key, request_data, save_meal)
+    except ValueError as error:
+        raise ValidationError(str(error)) from error
     return formatters.format_meal_detail(meal)
 
 

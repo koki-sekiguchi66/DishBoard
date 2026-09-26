@@ -6,6 +6,7 @@ Claude は人間より遥かに速く・大量に叩けるため、入力サイ�
 """
 from datetime import date
 import math
+from uuid import UUID
 
 from .constants import (
     MAX_AMOUNT_GRAMS,
@@ -120,3 +121,13 @@ def validate_amount_grams(amount):
     """直接指定と食数換算の両方に同じ重量上限を適用する。"""
     if not math.isfinite(amount) or not 0 < amount <= MAX_AMOUNT_GRAMS:
         raise ValidationError(f'amount_grams は0より大きく{MAX_AMOUNT_GRAMS}g以下の有限の数で指定してください。')
+
+
+def validate_idempotency_key(value):
+    """再送キーをUUIDに正規化する。省略時は従来の作成動作。"""
+    if value is None:
+        return None
+    try:
+        return UUID(value)
+    except (ValueError, TypeError, AttributeError) as error:
+        raise ValidationError('idempotency_key はUUID文字列で指定してください。') from error

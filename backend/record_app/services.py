@@ -11,6 +11,32 @@ class MealService:
 
     @staticmethod
     @transaction.atomic
+    def create_idempotently(user, key, request_data, create_record):
+        """利用者単位のロックと一意キーで、再送・同時作成を一つの記録にまとめる。"""
+        import hashlib
+        import json
+        from django.contrib.auth.models import User
+        from .models import MealCreationRequest
+
+        if key is None:
+            return create_record()
+        fingerprint = hashlib.sha256(
+            json.dumps(request_data, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
+        ).hexdigest()
+        User.objects.select_for_update().get(pk=user.pk)
+        previous = MealCreationRequest.objects.filter(user=user, key=key).first()
+        if previous:
+            if previous.fingerprint != fingerprint:
+                raise ValueError('同じidempotency_keyで内容を変更できません。新しい記録には新しいUUIDを使ってください。')
+            if previous.meal_record_id is None:
+                raise ValueError('このキーの食事記録は削除済みです。新規登録するときは新しいUUIDを使ってください。')
+            return MealRecord.objects.filter(user=user).prefetch_related('items').get(pk=previous.meal_record_id)
+        meal = create_record()
+        MealCreationRequest.objects.create(user=user, key=key, fingerprint=fingerprint, meal_record=meal)
+        return meal
+
+    @staticmethod
+    @transaction.atomic
     def create_meal_from_menu(user, menu: CustomMenu, data: dict) -> MealRecord:
         """カスタムメニューから食事記録を作成する"""
         record_date = data.get('record_date', date.today())

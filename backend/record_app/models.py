@@ -49,6 +49,19 @@ class MealRecord(models.Model):
         ]
         ordering = ['-record_date', '-created_at']
 
+class MealCreationRequest(models.Model):
+    """利用者単位で食事作成の再送を識別する。削除後もキーを保持する。"""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    key = models.UUIDField()
+    fingerprint = models.CharField(max_length=64)
+    meal_record = models.ForeignKey(MealRecord, null=True, on_delete=models.SET_NULL)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user', 'key'], name='meal_request_user_key_unique')]
+
+
 class MealRecordItem(models.Model):
     """食事記録の明細行。栄養素は記録時点のスナップショットとして保持する。"""
 
