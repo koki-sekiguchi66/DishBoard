@@ -12,6 +12,7 @@ from urllib.parse import urlsplit
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
+from mcp.types import ToolAnnotations
 
 from . import tools
 from .auth import DjangoAccessTokenVerifier
@@ -47,6 +48,16 @@ _DATE_FORMAT = (
     '利用者のタイムゾーンで絶対日付に変換してから渡すこと。'
 )
 
+_READ_ONLY = ToolAnnotations(
+    readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False,
+)
+_CREATE = ToolAnnotations(
+    readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False,
+)
+_UPDATE = ToolAnnotations(
+    readOnlyHint=False, destructiveHint=True, idempotentHint=False, openWorldHint=False,
+)
+
 
 def build_server(resource_url, issuer_url):
     """MCP サーバを組み立てる。
@@ -63,7 +74,7 @@ def build_server(resource_url, issuer_url):
             'DishBoard は食事と体重を記録して栄養管理を行うアプリである。'
             '食事記録の閲覧・栄養分析・記録の作成と編集ができる。'
             '残りの目標に合う学食メニューの提案もできる。'
-            '記録の削除はこのコネクタでは行えない。'
+            '利用者が確認した記録は削除できる。'
         ),
         token_verifier=DjangoAccessTokenVerifier(resource_url),
         auth=AuthSettings(
@@ -91,10 +102,11 @@ def build_server(resource_url, issuer_url):
 
 
 def _register_tools(server):
-    """T1〜T9 を登録する。"""
+    """ツールと副作用の注釈を登録する。"""
 
     server.add_tool(
         tools.search_foods,
+        annotations=_READ_ONLY,
         description=(
             '食品を名前で検索する。標準食品（文科省食品成分表）・利用者のMyアイテム・'
             '学食メニューを横断して探す。食事を記録する前に、必ずこれで '
@@ -112,6 +124,7 @@ def _register_tools(server):
 
     server.add_tool(
         tools.get_daily_nutrition,
+        annotations=_READ_ONLY,
         description=(
             '指定した1日の栄養素の合計と、その日に記録された食事の一覧を返す。'
             '食事一覧に明細は含まれない（明細が要るときは get_meal_record を使う）。\n'
@@ -123,6 +136,7 @@ def _register_tools(server):
 
     server.add_tool(
         tools.get_nutrition_trend,
+        annotations=_READ_ONLY,
         description=(
             '期間内の日別の栄養素合計（kcal と PFC）を返す。集計はサーバ側で済ませてある。'
             '記録のある日だけが daily に含まれる。\n'
@@ -135,6 +149,7 @@ def _register_tools(server):
 
     server.add_tool(
         tools.list_meal_records,
+        annotations=_READ_ONLY,
         description=(
             '期間内の食事記録を一覧する。1件ごとに id・日付・食事タイミング・食事名・'
             '明細件数・kcal と PFC を返す。明細の中身は含まれない。\n'
@@ -145,6 +160,7 @@ def _register_tools(server):
 
     server.add_tool(
         tools.get_meal_record,
+        annotations=_READ_ONLY,
         description=(
             '食事記録1件の詳細を返す。明細と12種類の栄養素を含む。\n'
             '栄養値は記録した時点のスナップショットであり、'
@@ -155,6 +171,7 @@ def _register_tools(server):
 
     server.add_tool(
         tools.suggest_cafeteria_menus,
+        annotations=_READ_ONLY,
         description=(
             '指定した日の「目標の残り」に近い学食メニューを提案する。'
             '**データベースには書き込まない**（提案するだけ）。\n'
@@ -172,6 +189,7 @@ def _register_tools(server):
 
     server.add_tool(
         tools.draft_meal,
+        annotations=_READ_ONLY,
         description=(
             '食事の下書きを作る。指定された明細から栄養値を計算して返すだけで、'
             '**データベースには一切書き込まない**（saved は必ず false）。\n'
@@ -184,6 +202,7 @@ def _register_tools(server):
 
     server.add_tool(
         tools.create_meal_record,
+        annotations=_CREATE,
         description=(
             '食事記録を新規作成する。**データベースに書き込む。**\n'
             '呼ぶ前に draft_meal で内容を利用者に確認すること。\n'
@@ -198,13 +217,27 @@ def _register_tools(server):
 
     server.add_tool(
         tools.update_meal_record,
+        annotations=_UPDATE,
         description=(
             '既存の食事記録を更新する。**データベースに書き込む。**\n'
             '明細は指定した内容で完全に置き換わる（差分更新ではない）。'
+            '栄養値は現在の食品マスタから再計算するため、過去のスナップショットから変わることがある。'
             '一部だけ変えたい場合も、get_meal_record で現在の明細を取得し、'
             '変更後の全明細を渡すこと。\n'
             '自分の記録以外は更新できない。\n'
             'meal_timing は breakfast / lunch / dinner / snack のいずれか。\n'
             f'{_DATE_FORMAT}\n{_UNITS}'
+        ),
+    )
+
+    server.add_tool(
+        tools.delete_meal_record,
+        annotations=ToolAnnotations(
+            readOnlyHint=False, destructiveHint=True, idempotentHint=True, openWorldHint=False,
+        ),
+        description=(
+            '自分の食事記録を明細とともに完全削除する。DBに書き込み、取り消せない。'
+            'get_meal_record で対象の日付・食事名・明細を提示し、利用者が削除を確認してから'
+            ' confirmed=true で呼ぶこと。存在しない記録や他人の記録は見つからないエラーを返す。'
         ),
     )

@@ -1,4 +1,4 @@
-"""MCP ツールの本体（T1〜T9）。
+"""MCP ツールの本体。
 
 ここは**入出力変換に徹する層**である。ドメイン処理は
 record_app/business_logic/ と record_app/serializers.py にある。
@@ -369,6 +369,21 @@ def _update_meal_record_sync(user, meal_record_id, record_date, meal_timing, mea
 
     updated = serializer.save()
     return formatters.format_meal_detail(updated)
+
+
+async def delete_meal_record(meal_record_id: int, confirmed: bool = False) -> dict:
+    """利用者が確認した自分の食事記録を明細とともに削除する。"""
+    user = await resolve_user(SCOPE_MEALS_WRITE)
+    if confirmed is not True:
+        raise ValidationError('削除する記録を利用者に提示し、確認後に confirmed=true を指定してください。')
+    check_write_rate_limit(user.id)
+    return await sync_to_async(_delete_meal_record_sync)(user, meal_record_id)
+
+
+def _delete_meal_record_sync(user, meal_record_id):
+    meal = _find_own_meal_record(user, meal_record_id)
+    meal.delete()
+    return {'id': meal_record_id, 'deleted': True}
 
 
 def _build_meal_payload(user, record_date, meal_timing, meal_name, items):
