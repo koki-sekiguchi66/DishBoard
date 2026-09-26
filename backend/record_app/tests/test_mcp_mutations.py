@@ -35,10 +35,11 @@ def test_参照ツールと書き込みツールの注釈を区別する(run_asy
     server = build_server('https://example.com/mcp', 'https://example.com/o')
     registered = {tool.name: tool for tool in run_async(server.list_tools)}
     for name in ('get_meal_record', 'search_foods', 'draft_meal', 'list_meal_records',
-                 'get_daily_nutrition', 'get_nutrition_trend', 'suggest_cafeteria_menus'):
+                 'get_daily_nutrition', 'get_nutrition_trend', 'suggest_cafeteria_menus', 'draft_custom_food'):
         annotation = registered[name].annotations
         assert annotation.readOnlyHint is True
         assert annotation.destructiveHint is False
         assert annotation.openWorldHint is False
     assert registered['delete_meal_record'].annotations.destructiveHint is True
     assert registered['create_meal_record'].annotations.readOnlyHint is False
+    assert registered['create_custom_food'].annotations.readOnlyHint is False

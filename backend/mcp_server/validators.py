@@ -5,10 +5,12 @@ Claude は人間より遥かに速く・大量に叩けるため、入力サイ�
 （「不正です」ではなく「何がどう不正で、どうすればよいか」）。
 """
 from datetime import date
+import math
 
 from .constants import (
     MAX_AMOUNT_GRAMS,
     MAX_ITEMS_PER_MEAL,
+    MAX_SERVINGS,
     MAX_MEAL_NAME_LENGTH,
     MAX_TREND_DAYS,
     MIN_SEARCH_QUERY_LENGTH,
@@ -104,16 +106,17 @@ def validate_items(items):
                 f'{" / ".join(VALID_ITEM_TYPES)} のいずれかを指定してください。'
             )
 
-        if item.amount_grams <= 0:
-            raise ValidationError(
-                f'{position}.amount_grams は正の数で指定してください'
-                f'（受け取った値: {item.amount_grams}）。'
-            )
-
-        if item.amount_grams > MAX_AMOUNT_GRAMS:
-            raise ValidationError(
-                f'{position}.amount_grams が大きすぎます（{item.amount_grams}g）。'
-                f'{MAX_AMOUNT_GRAMS}g 以内で指定してください。'
-            )
+        if (item.amount_grams is None) == (item.servings is None):
+            raise ValidationError(f'{position} は amount_grams / servings のどちらか一方を指定してください。')
+        if item.amount_grams is not None:
+            validate_amount_grams(item.amount_grams)
+        elif not math.isfinite(item.servings) or not 0 < item.servings <= MAX_SERVINGS:
+            raise ValidationError(f'{position}.servings は0より大きく{MAX_SERVINGS}以下で指定してください。')
 
     return items
+
+
+def validate_amount_grams(amount):
+    """直接指定と食数換算の両方に同じ重量上限を適用する。"""
+    if not math.isfinite(amount) or not 0 < amount <= MAX_AMOUNT_GRAMS:
+        raise ValidationError(f'amount_grams は0より大きく{MAX_AMOUNT_GRAMS}g以下の有限の数で指定してください。')

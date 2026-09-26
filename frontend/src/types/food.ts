@@ -46,6 +46,11 @@ export interface NutritionCalcResponse {
 export interface CustomFood {
   id: number;
   name: string;
+  nutrition_basis?: "per_100g" | "per_serving";
+  serving_size_g?: number | null;
+  source?: "manual" | "url";
+  source_url?: string;
+  is_verified?: boolean;
   calories_per_100g: number;
   protein_per_100g: number;
   fat_per_100g: number;
@@ -61,7 +66,7 @@ export interface CustomFood {
 }
 
 /** CustomFood のうち 100g あたり栄養素を表すフィールド名 */
-export type Per100gField = Exclude<keyof CustomFood, "id" | "name">;
+export type Per100gField = Extract<keyof CustomFood, `${string}_per_100g`>;
 
 /**
  * 記録側の栄養素名 → CustomFood の 100g あたりフィールド名。

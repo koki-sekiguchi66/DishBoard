@@ -15,10 +15,15 @@ import logging
 from typing import Literal
 
 from asgiref.sync import sync_to_async
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from . import formatters, validators
 from .constants import (
+    CUSTOM_FOOD_DRAFT_MAX_AGE,
+    CUSTOM_FOOD_DRAFT_SALT,
+    MAX_DRAFT_TOKEN_LENGTH,
+    MAX_SOURCE_URL_LENGTH,
+    MAX_MEAL_NAME_LENGTH,
     MAX_CAFETERIA_SUGGESTIONS,
     MAX_LIST_RECORDS,
     MAX_SEARCH_RESULTS,
@@ -41,13 +46,99 @@ class MealItemInput(BaseModel):
         description='食品の種別。search_foods が返した値をそのまま使う'
     )
     item_id: int = Field(description='search_foods が返した item_id')
-    amount_grams: float = Field(
+    amount_grams: float | None = Field(
+        default=None,
         description=(
             '分量(g)。item_type が standard / custom のときは '
             'この分量で栄養値を按分する。cafeteria は1食ぶんの値が'
             '決まっているため、この値では変倍されない'
         )
     )
+    servings: float | None = Field(
+        default=None, description='1食分重量を登録したMyアイテムの食数。amount_grams とどちらか一方を指定する。',
+    )
+
+
+class FoodNutritionInput(BaseModel):
+    """出典で確認できた栄養値。単位はツール説明に従う。"""
+
+    model_config = ConfigDict(extra='forbid', allow_inf_nan=False)
+    calories: float = Field(ge=0)
+    protein: float = Field(ge=0)
+    fat: float = Field(ge=0)
+    carbohydrates: float = Field(ge=0)
+    dietary_fiber: float = Field(default=0, ge=0)
+    sodium: float = Field(default=0, ge=0)
+    calcium: float = Field(default=0, ge=0)
+    iron: float = Field(default=0, ge=0)
+    vitamin_a: float = Field(default=0, ge=0)
+    vitamin_b1: float = Field(default=0, ge=0)
+    vitamin_b2: float = Field(default=0, ge=0)
+    vitamin_c: float = Field(default=0, ge=0)
+
+
+class CustomFoodInput(BaseModel):
+    """登録時の表示基準と出典を含むMyアイテムの入力。"""
+
+    model_config = ConfigDict(extra='forbid', allow_inf_nan=False)
+    name: str = Field(min_length=1, max_length=MAX_MEAL_NAME_LENGTH)
+    nutrition_basis: Literal['per_100g', 'per_serving'] = 'per_100g'
+    serving_size_g: float | None = None
+    nutrition: FoodNutritionInput
+    source: Literal['manual', 'url']
+    source_url: str = Field(default='', max_length=MAX_SOURCE_URL_LENGTH)
+
+
+async def draft_custom_food(food: CustomFoodInput) -> dict:
+    """Myアイテムの下書きを返す。DBには保存しない。"""
+    from django.core import signing
+    from record_app.business_logic.custom_food import prepare_custom_food
+
+    user = await resolve_user(SCOPE_MEALS_READ)
+    data = food.model_dump()
+    data['name'] = validators.validate_meal_name(food.name)
+    try:
+        values = prepare_custom_food(data)
+    except ValueError as error:
+        raise ValidationError(str(error)) from error
+    token = signing.dumps({'user_id': user.id, 'food': values}, salt=CUSTOM_FOOD_DRAFT_SALT, compress=True)
+    return {**data, 'is_verified': False, 'saved': False, 'draft_token': token,
+            'expires_in_seconds': CUSTOM_FOOD_DRAFT_MAX_AGE}
+
+
+async def create_custom_food(draft_token: str, confirmed: bool = False) -> dict:
+    """本人が確認した署名付きの下書きからMyアイテムを作成する。"""
+    from django.core import signing
+
+    user = await resolve_user(SCOPE_MEALS_WRITE)
+    if confirmed is not True:
+        raise ValidationError('下書きの名前・基準・重量・栄養値・出典を利用者に提示し、確認後に confirmed=true を指定してください。')
+    if not draft_token or len(draft_token) > MAX_DRAFT_TOKEN_LENGTH:
+        raise ValidationError('draft_custom_food で有効な下書きを作成してください。')
+    try:
+        draft = signing.loads(draft_token, salt=CUSTOM_FOOD_DRAFT_SALT, max_age=CUSTOM_FOOD_DRAFT_MAX_AGE)
+    except signing.BadSignature as error:
+        raise ValidationError('下書きが無効または期限切れです。draft_custom_food からやり直してください。') from error
+    if draft['user_id'] != user.id:
+        raise ValidationError('この下書きは利用できません。本人の下書きを作成してください。')
+    check_write_rate_limit(user.id)
+    return await sync_to_async(_create_custom_food_sync)(user, draft['food'])
+
+
+def _create_custom_food_sync(user, values):
+    from django.db import IntegrityError, transaction
+    from record_app.serializers import CustomFoodSerializer
+    from record_app.business_logic.custom_food import format_custom_food
+
+    serializer = CustomFoodSerializer(data={**values, 'is_verified': False})
+    if not serializer.is_valid():
+        raise ValidationError(f'Myアイテムを作成できません: {serializer.errors}')
+    try:
+        with transaction.atomic():
+            food = serializer.save(user=user)
+    except IntegrityError as error:
+        raise ValidationError('同じ名前のMyアイテムが既にあります。search_foods で確認してください。') from error
+    return format_custom_food(food)
 
 
 # =============================================================================
@@ -281,9 +372,13 @@ def _resolve_items(user, items):
     resolved = []
 
     for index, item in enumerate(items):
-        entry = calculator.resolve_item(
-            user, item.item_type, item.item_id, item.amount_grams, NUTRIENT_ROUND_DIGITS
-        )
+        try:
+            entry = calculator.resolve_item(
+                user, item.item_type, item.item_id, item.amount_grams, NUTRIENT_ROUND_DIGITS,
+                servings=item.servings,
+            )
+        except ValueError as error:
+            raise ValidationError(str(error)) from error
         if entry is None:
             raise NotFoundError(
                 f'items[{index}] の食品が見つかりません'
@@ -291,11 +386,13 @@ def _resolve_items(user, items):
                 'search_foods で item_type と item_id を確認してください。'
             )
 
+        resolved_input = item.model_copy(update={'amount_grams': entry['amount_grams']})
+        validators.validate_amount_grams(entry['amount_grams'])
         resolved.append({
-            'input': item,
+            'input': resolved_input,
             'name': entry['name'],
             'nutrition': entry['nutrition'],
-            'formatted': formatters.format_draft_item(item, entry['name'], entry['nutrition']),
+            'formatted': formatters.format_draft_item(resolved_input, entry['name'], entry['nutrition']),
         })
 
     return resolved

@@ -213,6 +213,14 @@ class CustomFood(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100, db_index=True)
+    nutrition_basis = models.CharField(
+        max_length=20, default='per_100g',
+        choices=[('per_100g', '100gあたり'), ('per_serving', '1食あたり')],
+    )
+    serving_size_g = models.FloatField(null=True, blank=True, verbose_name='1食分重量(g)')
+    source = models.CharField(max_length=10, default='manual', choices=[('manual', '手入力'), ('url', 'URL')])
+    source_url = models.URLField(blank=True, default='')
+    is_verified = models.BooleanField(default=False, verbose_name='利用者が確認済み')
     calories_per_100g = models.FloatField(verbose_name="エネルギー(kcal)")
     protein_per_100g = models.FloatField(verbose_name="たんぱく質(g)")
     fat_per_100g = models.FloatField(verbose_name="脂質(g)")
@@ -236,6 +244,18 @@ class CustomFood(models.Model):
         verbose_name = "カスタム食品"
         verbose_name_plural = "カスタム食品"
         unique_together = ['user', 'name']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(serving_size_g__isnull=True) | models.Q(serving_size_g__gt=0),
+                name='custom_food_serving_positive',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(nutrition_basis='per_100g') | (
+                    models.Q(nutrition_basis='per_serving') & models.Q(serving_size_g__isnull=False)
+                ),
+                name='custom_food_serving_required',
+            ),
+        ]
         indexes = [
             models.Index(fields=['user', 'name'], name='customfood_user_name_idx'),
             models.Index(fields=['user'], name='customfood_user_idx'),

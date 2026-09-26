@@ -4,6 +4,28 @@ from django.contrib.auth.models import User
 from django.db import transaction
 
 class CustomFoodSerializer(serializers.ModelSerializer):
+    def validate(self, attrs):
+        from .business_logic.custom_food import validate_metadata, NUTRIENT_FIELDS
+        import math
+
+        data = {key: getattr(self.instance, key) for key in (
+            'nutrition_basis', 'serving_size_g', 'source', 'source_url',
+        )} if self.instance else {}
+        data.update(attrs)
+        try:
+            validate_metadata(data)
+        except ValueError as error:
+            raise serializers.ValidationError(str(error)) from error
+        for field in NUTRIENT_FIELDS.values():
+            if field in attrs and (not math.isfinite(attrs[field]) or attrs[field] < 0):
+                raise serializers.ValidationError({field: '有限の非負数で指定してください。'})
+        checked_fields = (*NUTRIENT_FIELDS.values(), 'nutrition_basis', 'serving_size_g', 'source', 'source_url', 'name')
+        if self.instance and 'is_verified' not in attrs and any(
+            field in attrs and attrs[field] != getattr(self.instance, field) for field in checked_fields
+        ):
+            attrs['is_verified'] = False
+        return attrs
+
     class Meta:
         model = CustomFood
         fields = '__all__'

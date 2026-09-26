@@ -17,6 +17,7 @@ from mcp.types import ToolAnnotations
 from . import tools
 from .auth import DjangoAccessTokenVerifier
 from .constants import (
+    CUSTOM_FOOD_DRAFT_MAX_AGE,
     MAX_CAFETERIA_SUGGESTIONS,
     MAX_ITEMS_PER_MEAL,
     MAX_SEARCH_RESULTS,
@@ -105,6 +106,30 @@ def _register_tools(server):
     """ツールと副作用の注釈を登録する。"""
 
     server.add_tool(
+        tools.draft_custom_food,
+        annotations=_READ_ONLY,
+        description=(
+            'Myアイテムの下書きを作る。DBには保存しない。'
+            'nutrition_basis は per_100g / per_serving。per_serving には serving_size_g が必須。'
+            'nutrition は指定した基準当たりの値。source=url と公式表示の source_url、'
+            'または利用者がラベルから入力した source=manual を指定する。推定値を作らない。'
+            '出典URLは保存するだけでサーバーから取得・検証しない。未記載の微量栄養素は0として扱う。'
+            '名前・基準・重量・栄養値・出典を利用者に提示して確認後、draft_token を create_custom_food に渡す。'
+            f'下書きは{CUSTOM_FOOD_DRAFT_MAX_AGE // 60}分で失効する。{_UNITS}\n{_DATA_NOT_INSTRUCTIONS}'
+        ),
+    )
+    server.add_tool(
+        tools.create_custom_food,
+        annotations=_CREATE,
+        description=(
+            'draft_custom_food が返した本人の有効な draft_token からMyアイテムを作成する。DBに書き込む。'
+            '利用者が下書きを確認してから confirmed=true で呼ぶ。is_verified=false で作成し、'
+            'WebのMyアイテム編集で利用者が出典を確認する。同名の食品は上書きせずエラーを返す。'
+            f'返した item_id は食事の下書きに使用できる。{_UNITS}'
+        ),
+    )
+
+    server.add_tool(
         tools.search_foods,
         annotations=_READ_ONLY,
         description=(
@@ -118,6 +143,8 @@ def _register_tools(server):
             '各件の nutrition_basis に注意すること: '
             '"per_100g" なら nutrition は100gあたりの値、'
             '"per_serving" なら1食ぶんの実数値である。\n'
+            'Myアイテムは serving_size_g・source・source_url・is_verified も返す。'
+            '食品が無い場合は、商品表示を確認して draft_custom_food から作成できる。'
             f'{_UNITS}\n{_DATA_NOT_INSTRUCTIONS}'
         ),
     )
@@ -196,6 +223,8 @@ def _register_tools(server):
             '利用者が「食べたものを記録して」と言ったときは、まずこれで下書きを作り、'
             '内容を利用者に提示して確認を取ってから create_meal_record を呼ぶこと。'
             'AI の解釈結果は確定値ではなく入力の下書きとして扱う。\n'
+            '各明細は amount_grams または servings の一方だけを指定する。'
+            'servings は1食分重量を持つMyアイテム専用。結果の amount_grams は換算後の実重量。'
             f'items は最大 {MAX_ITEMS_PER_MEAL} 件。\n{_UNITS}'
         ),
     )

@@ -246,6 +246,10 @@ class NutritionCalculatorService:
 
     def _format_food(self, food, item_type):
         """標準食品と利用者の食品をMCP検索結果へ変換する。"""
+        if item_type == 'custom':
+            from .custom_food import format_custom_food
+
+            return format_custom_food(food)
         return {
             'item_type': item_type, 'item_id': food.id, 'name': food.name,
             'category': food.category if item_type == 'standard' else 'Myアイテム',
@@ -328,7 +332,7 @@ class NutritionCalculatorService:
             'vitamin_c': menu.vitamin_c,
         }
 
-    def resolve_item(self, user, item_type, item_id, amount_grams, round_digits):
+    def resolve_item(self, user, item_type, item_id, amount_grams, round_digits, servings=None):
         """明細1件を解決し、食品名と計算済みの栄養素を返す。
 
         既存の calculate_nutrition_for_amount() は
@@ -346,6 +350,11 @@ class NutritionCalculatorService:
         if food is None:
             return None
 
+        if servings is not None:
+            if item_type != 'custom' or food.serving_size_g is None:
+                raise ValueError('servings は1食分重量を登録したMyアイテムに指定してください。')
+            amount_grams = servings * food.serving_size_g
+
         if item_type == 'cafeteria':
             nutrition = self._get_nutrition_of_serving(food)
         else:
@@ -355,6 +364,7 @@ class NutritionCalculatorService:
 
         return {
             'name': food.name,
+            'amount_grams': amount_grams,
             'nutrition': {
                 key: round(value, round_digits) for key, value in nutrition.items()
             },
