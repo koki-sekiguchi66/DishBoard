@@ -10,7 +10,8 @@ disable-model-invocation: true
 本番の DB とドメインに触れる操作であり、失敗すると利用者（研究室10〜20名）に影響する。
 
 対象: GCP Compute Engine e2-micro 上の Docker Compose（`docker-compose.production.yml`）。
-詳細な背景と検証チェックリストは `docs/deployment.md` にある。
+公開できる構成・更新順序・検証項目は [運用手順](../../../docs-public/operations.md) に集約する。
+`docs/deployment.md` は Git 管理外の作業記録であり、公開手順の前提にはしない。
 
 ## A. 通常のデプロイ（コード更新の反映）
 
@@ -48,7 +49,7 @@ docker compose -f docker-compose.production.yml logs --tail=100 backend mcp
 
 `run --rm` は `build` 済みの新しいイメージを使うので、新しいマイグレーションが適用される。
 
-### 必ず引っかかる5点
+### 更新時に確認する4点
 
 | 落とし穴 | 対処 |
 |---|---|

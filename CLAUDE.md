@@ -23,8 +23,8 @@
 | ドキュメント・ADR | `.claude/skills/write-docs/SKILL.md` |
 | 本番の不具合の切り分け | `.claude/skills/debug-production/SKILL.md` |
 | 本番反映（`/deploy` 明示時のみ） | `.claude/skills/deploy/SKILL.md` |
-| 「なぜこの設計か」の確認 | `docs-public/decisions.md`（ADR #1〜#27） |
-| 全体構成 | `ARCHITECTURE.md` |
+| 「なぜこの設計か」の確認 | `docs-public/decisions.md`（分野別索引から読む） |
+| 全体構成・公開資料の入口 | `docs-public/architecture.md` / `docs-public/README.md` |
 | 認証・Google連携・MCP認可 | `docs-public/google-authentication.md` |
 
 `docs/` は Git 管理外の個人メモ（作業ログ・トラブル事例）。**`git add` しない**。
@@ -97,11 +97,13 @@ cd backend && venv/Scripts/python.exe -m pytest -q   # Windows（Linux: python -
 
 # frontend
 cd frontend
-npx tsc --noEmit        # ★実質的な品質ゲート（ESLint は .ts/.tsx を見ていない）
+npx tsc --noEmit        # 型チェック
+npm run lint           # TypeScript・React Hooks 等の検査
 npm run test:run && npm run build
 ```
 
-`backend` コンテナは起動時に `migrate` と `load_standard_foods` を自動実行する。
+開発 Compose の `backend` は起動時に `migrate` と `load_standard_foods` を自動実行する。
+本番では自動実行しない。反映順序は `docs-public/operations.md` を参照。
 
 ## 言語とコミット
 

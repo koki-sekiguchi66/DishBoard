@@ -10,7 +10,7 @@ record_app/
   auth_views.py        セッション認証まわり（OAuth 認可画面用の Google ログイン）
   google_auth.py       Google ID トークンの検証とユーザー解決
   services.py          複数モデルにまたがる操作。@transaction.atomic で境界を明示
-  business_logic/      HTTP を知らない純粋なドメイン処理
+  business_logic/      HTTP 入出力に依存しないドメイン処理（ORM・外部APIは利用する）
     nutrition_calculator.py   食品検索・栄養計算・日次サマリー
     food_search.py            MCP向けの食品名正規化と参考検索
     custom_food.py            Myアイテムの出典検証と1食分・100g換算
@@ -59,7 +59,7 @@ MyアイテムのMCP作成は署名付き下書きと本人確認を経由する
 
 ## 認証
 
-3系統が並存する。**混同しないこと**（→ `docs-public/google-authentication.md`）。
+3系統が並存する。**混同しないこと**（→ [認証仕様](../docs-public/google-authentication.md)）。
 
 | 経路 | 認証方式 |
 |---|---|
@@ -114,7 +114,8 @@ pytest + pytest-django（`pytest.ini` で `DJANGO_SETTINGS_MODULE=...settings.de
 成分表はCSVの成分識別子で列を解決する。固定の列番号・スキップ行数へ戻さない。
 学食マスタの `sodium` は食塩相当量g、MCP・Web APIが返す `sodium` はナトリウムmg。
 変換は `nutrition_units.py` を使い、過去のスナップショットを自動で書き換えない。
-検索・削除・再投入の仕様は `docs-public/mcp.md` を参照。
+検索・削除・再投入の仕様は [MCP仕様](../docs-public/mcp.md)、モデル間の関係は
+[データ設計](../docs-public/data-model.md)を参照。
 
 ## 設定
 

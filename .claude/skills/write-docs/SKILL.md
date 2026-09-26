@@ -10,6 +10,8 @@ description: DishBoard のドキュメントを書くときの進め方。公開
 - **この内容の読者は誰か。** ここで置き場所が決まる（§1）
 - 既存の同種ドキュメントを1つ読む。`docs-public/decisions.md` か `docs-public/google-authentication.md`
 - 既に同じことを書いた文書がないか。**新規作成より既存の更新を優先する**
+- 公開資料の入口は `docs-public/README.md`。アーキテクチャの本文は
+  `docs-public/architecture.md` を更新する（ルートの `ARCHITECTURE.md` は案内のみ）
 
 ## 1. 置き場所を決める
 
@@ -115,7 +117,7 @@ ADR には要約と判断だけ残し、詳細はこちらへ置いてリンク�
 「できない」「未実装」と書いていた箇所が嘘になる。これが最も見落としやすい。
 
 ```bash
-grep -rn "未実装\|できない\|していない\|見送\|localStorage" docs-public/ ARCHITECTURE.md */CLAUDE.md
+rg -n '未実装|できない|していない|見送|localStorage' docs-public/ backend/CLAUDE.md frontend/CLAUDE.md
 ```
 
 該当したら次のいずれかを行う。
@@ -124,7 +126,7 @@ grep -rn "未実装\|できない\|していない\|見送\|localStorage" docs-p
 |---|---|
 | 「今後の課題」の表に載っている | **その行を消す** |
 | 過去の ADR の決定を部分的に変えた | 古い ADR の冒頭に `> 一部変更: 〜（#N）` と追記。**本文は書き換えない** |
-| 構成図・フロー図が古くなった | `ARCHITECTURE.md` / `*/CLAUDE.md` を更新 |
+| 構成図・フロー図が古くなった | `docs-public/architecture.md` / `*/CLAUDE.md` を更新 |
 | MCP ツールの description の前提が変わった | **description を直す**（Claude が読む唯一の仕様書） |
 
 **古い ADR を書き換えないこと。** その時点で何を考えたかが記録の価値であり、
@@ -133,7 +135,7 @@ grep -rn "未実装\|できない\|していない\|見送\|localStorage" docs-p
 ### 5-2. 足りない記述を書く
 
 - 一般的でない選択をしたなら ADR を1つ足す（§2 の型）
-- 処理の流れが増えたなら `ARCHITECTURE.md` の「主要な処理フロー」に足す
+- 処理の流れが増えたなら `docs-public/architecture.md` の該当フローに足す
 - 新しい落とし穴を踏んだなら `*/CLAUDE.md` の該当節に足す
 
 ### 5-3. 経験を残す

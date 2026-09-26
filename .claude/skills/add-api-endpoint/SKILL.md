@@ -112,7 +112,7 @@ cd backend && venv/Scripts/python.exe -m pytest -q
 - [ ] 過去の ADR を**部分的に上書きした**なら、その ADR の冒頭に
       `> 一部変更: 〜（#N）` と追記する。**古い ADR を書き換えず、関係を明示する**
 - [ ] 一般的でない判断をしたなら ADR を1つ足す
-- [ ] 処理の流れが増えたなら `ARCHITECTURE.md` の「主要な処理フロー」に足す
+- [ ] 処理の流れが増えたなら `docs-public/architecture.md`、入出力は `docs-public/api.md` / `mcp.md` を更新する
 - [ ] 層やモジュールが増えたなら `backend/CLAUDE.md` の構成図を更新する
 - [ ] MCP ツールを足した／既存ツールの前提が変わったなら、**description を見直す**
       （Claude が読む唯一の仕様書。古い前提が残ると Claude が誤った案内をする）

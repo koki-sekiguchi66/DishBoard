@@ -101,7 +101,8 @@ vi.mock("@/lib/axios", () => ({
 
 ```bash
 cd frontend
-npx tsc --noEmit        # ★ 実質的な品質ゲート
+npx tsc --noEmit        # 型チェック
+npm run lint           # TypeScript・React Hooks 等の検査
 npm run test:run
 ```
 
@@ -109,7 +110,7 @@ npm パッケージを追加した場合は `docker compose rm -v -f frontend &&
 （`-v` を忘れると anonymous volume が残って反映されない）。
 
 `VITE_` の環境変数を増やした場合は、`.env.production.example` にも項目を足す。
-**ビルド時に埋め込まれる**ため、本番では frontend イメージの再ビルドが要る（`deploy` Skill 参照）。
+**ビルド時に埋め込まれる**ため、本番では frontend の成果物を同梱する `nginx` イメージの再ビルドが要る（`deploy` Skill 参照）。
 
 ## 8. 記録する（★実装の一部。省略しない）
 
@@ -121,8 +122,8 @@ npm パッケージを追加した場合は `docker compose rm -v -f frontend &&
 - [ ] `docs-public/decisions.md` の**今後の課題**の表から、解消した行を消す
 - [ ] 過去の ADR を部分的に上書きしたなら、冒頭に `> 一部変更: 〜（#N）` と追記する
 - [ ] UI の方針・意匠を変えた、または一般的でない判断をしたなら ADR を1つ足す
-- [ ] 状態管理やデータの流れが変わったなら `ARCHITECTURE.md` の
-      「フロントエンドの設計」「主要な処理フロー」を更新する
+- [ ] 状態管理やデータの流れが変わったなら `docs-public/architecture.md` の
+      「フロントエンドの状態と画面」「食事記録の保存経路」を更新する
 - [ ] 落とし穴を1つ踏んだなら `frontend/CLAUDE.md` の「既知の落とし穴」に足す
 - [ ] 詰まった過程は `docs/`（Git 管理外）へ。リモートには書かない
 

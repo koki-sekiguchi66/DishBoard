@@ -32,8 +32,8 @@ import X from '@/features/customFoods/components/EditCustomFoodModal'; // ❌
 
 - `strict: true` / `allowJs: false`。`src/` に `.js` / `.jsx` は無い
 - **`@ts-expect-error` と `any` は禁止**。不明な外部データは `unknown` で受けて絞り込む
-- **`npx tsc --noEmit` が実質的な品質ゲート。**
-  ESLint の対象は `**/*.{js,jsx}` のみで、`.ts` / `.tsx` を検査していない
+- **`npx tsc --noEmit` と `npm run lint` を実行する。**
+  型の整合性は TypeScript、`.ts` / `.tsx` の未使用値や Hooks 等は ESLint で検査する
 
 ## UI
 
@@ -46,7 +46,7 @@ import X from '@/features/customFoods/components/EditCustomFoodModal'; // ❌
 - **画面で最も重要な1アクションだけ `<Button variant="brand" size="xl">`。**
   1画面に複数置くと発光が意味を失う → ADR #33
 - **`Card` で囲わない。** セクションは `@/components/layout` の `Section`（見出し + 上端の罫線）
-  で区切る。面を持たせてよいのは記録ページのヒーロー（黒板）だけ → ADR #34
+  で区切る。記録ページのヒーロー（黒板）は廃止済み → ADR #34・#35
 - 罫線は `border-border/40`、囲みが要る場所でも `/40`〜`/70` に留める → ADR #34
 - トーストは `sonner`、グラフは `recharts`
 - **数値欄は `MeasureField`**（`@/components/inputs`）。`<input type="number">` を直接置かない。
