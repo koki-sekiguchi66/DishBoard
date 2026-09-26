@@ -231,6 +231,10 @@ class NutritionExtractor:
                     value = self.post_processor.extract_numeric_value(value_text)
 
                     if value is not None:
+                        if nutrient == 'sodium' and match.group(0).startswith('食塩相当量'):
+                            from .nutrition_units import salt_grams_to_sodium_mg
+
+                            value = salt_grams_to_sodium_mg(value)
                         nutrition[nutrient] = value
                         logger.debug(f"Extracted {nutrient}: {value} from '{text}'")
                         break

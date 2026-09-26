@@ -2,6 +2,7 @@ from django.db import connection
 from django.db.models import Q, Sum
 from django.contrib.postgres.search import TrigramSimilarity
 from ..models import StandardFood, CustomFood
+from .nutrition_units import salt_grams_to_sodium_mg
 
 # トリグラム類似度の足切り閾値。意図的に緩い（ランキングではなく候補の粗い絞り込み）。
 # 精度は後段のキーワード部分一致で担保している。ここだけを見て厳しくしないこと。
@@ -273,7 +274,7 @@ class NutritionCalculatorService:
         """食堂メニューの1食ぶんの栄養素を共通形式で返す。
 
         CafeteriaMenu は 100g あたりではなく提供1食ぶんの実数値を持つ。
-        フィールド名は記録側（MealRecordItem）と同じ命名なのでそのまま写す。
+        食塩相当量gだけは記録側のナトリウムmgへ換算する。
         """
         return {
             'calories': menu.calories,
@@ -281,7 +282,7 @@ class NutritionCalculatorService:
             'fat': menu.fat,
             'carbohydrates': menu.carbohydrates,
             'dietary_fiber': menu.dietary_fiber,
-            'sodium': menu.sodium,
+            'sodium': salt_grams_to_sodium_mg(menu.sodium),
             'calcium': menu.calcium,
             'iron': menu.iron,
             'vitamin_a': menu.vitamin_a,

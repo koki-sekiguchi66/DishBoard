@@ -54,8 +54,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 class CafeteriaMenuSerializer(serializers.ModelSerializer):
+    sodium = serializers.SerializerMethodField()
     category_display = serializers.CharField(source='get_category_display', read_only=True)
     cafeteria_display = serializers.CharField(source='get_cafeteria_display', read_only=True)
+
+    def get_sodium(self, obj):
+        from .business_logic.nutrition_units import salt_grams_to_sodium_mg
+
+        return round(salt_grams_to_sodium_mg(obj.sodium), 2)
 
     class Meta:
         model = CafeteriaMenu

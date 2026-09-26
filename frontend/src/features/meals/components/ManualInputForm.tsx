@@ -54,7 +54,7 @@ const BASIC_FIELDS: NutrientField[] = [
 
 const DETAIL_FIELDS: NutrientField[] = [
   { name: "dietary_fiber", label: "食物繊維", unit: "g", step: 0.1 },
-  { name: "sodium", label: "食塩相当量", unit: "g", step: 0.1 },
+  { name: "sodium", label: "ナトリウム", unit: "mg", step: 1 },
   { name: "calcium", label: "カルシウム", unit: "mg", step: 10 },
   { name: "iron", label: "鉄", unit: "mg", step: 0.1 },
   { name: "vitamin_a", label: "ビタミンA", unit: "μg", step: 10 },
