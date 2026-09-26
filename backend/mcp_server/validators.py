@@ -59,7 +59,9 @@ def parse_date_range(start_date, end_date):
 def validate_search_query(query):
     """検索キーワードの長さを検証する。"""
     cleaned = (query or '').strip()
-    if len(cleaned) < MIN_SEARCH_QUERY_LENGTH:
+    from record_app.business_logic.food_search import normalize_food_name
+
+    if len(normalize_food_name(cleaned)) < MIN_SEARCH_QUERY_LENGTH:
         raise ValidationError(
             f'検索キーワードは{MIN_SEARCH_QUERY_LENGTH}文字以上で指定してください。'
         )

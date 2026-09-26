@@ -190,7 +190,7 @@ class NutritionCalculatorService:
     # 別メソッドとして追加する。
     # =========================================================================
 
-    def search_foods_across_sources(self, user, query, limit):
+    def search_foods_across_sources(self, user, query, limit, item_types=None, cafeteria=None):
         """標準食品・Myアイテム・食堂メニューを横断してあいまい検索する。
 
         既存の search_foods() は標準食品しか見ず、user 引数も持たないため
@@ -208,12 +208,49 @@ class NutritionCalculatorService:
         for keyword in query.split():
             keyword_filter &= Q(name__icontains=keyword)
 
-        results = []
-        results.extend(self._search_standard_foods(query, keyword_filter, limit))
-        results.extend(self._search_custom_foods(user, keyword_filter, limit))
-        results.extend(self._search_cafeteria_menus(keyword_filter, limit))
+        from itertools import zip_longest
+        from .food_search import matching_foods
+        from ..models import CafeteriaMenu
 
-        return results[:limit]
+        sources = set(item_types if item_types is not None else ('standard', 'custom', 'cafeteria'))
+        groups = []
+        if 'standard' in sources:
+            ranked = list(self._standard_food_candidates(query, keyword_filter)[:limit])
+            seen = {food.pk for food in ranked}
+            ranked.extend(food for food in matching_foods(StandardFood.objects.all(), query)
+                          if food.pk not in seen)
+            groups.append([self._format_food(food, 'standard') for food in ranked[:limit]])
+        if 'custom' in sources:
+            foods = matching_foods(CustomFood.objects.filter(user=user), query)
+            groups.append([self._format_food(food, 'custom') for food in foods[:limit]])
+        if 'cafeteria' in sources:
+            menus = CafeteriaMenu.objects.all()
+            if cafeteria:
+                menus = menus.filter(cafeteria=cafeteria)
+            grouped = {}
+            for menu in matching_foods(menus, query):
+                nutrition = self._get_nutrition_of_serving(menu)
+                key = (menu.menu_id, menu.name, tuple(nutrition.items()))
+                if key not in grouped:
+                    grouped[key] = {
+                        'item_type': 'cafeteria', 'item_id': menu.id, 'name': menu.name,
+                        'category': menu.category_label or menu.get_category_display(),
+                        'nutrition_basis': 'per_serving', 'nutrition': nutrition,
+                        'cafeterias': [],
+                    }
+                grouped[key]['cafeterias'].append({
+                    'code': menu.cafeteria, 'name': menu.get_cafeteria_display(), 'item_id': menu.id,
+                })
+            groups.append(list(grouped.values())[:limit])
+        return [food for group in zip_longest(*groups) for food in group if food is not None][:limit]
+
+    def _format_food(self, food, item_type):
+        """標準食品と利用者の食品をMCP検索結果へ変換する。"""
+        return {
+            'item_type': item_type, 'item_id': food.id, 'name': food.name,
+            'category': food.category if item_type == 'standard' else 'Myアイテム',
+            'nutrition_basis': 'per_100g', 'nutrition': self._get_nutrition_per_100g(food),
+        }
 
     def _search_standard_foods(self, query, keyword_filter, limit):
         """標準食品をトリグラム類似度 + キーワード一致で検索する。"""

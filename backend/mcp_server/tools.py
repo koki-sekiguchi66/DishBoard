@@ -54,19 +54,30 @@ class MealItemInput(BaseModel):
 # T1: 食品検索
 # =============================================================================
 
-async def search_foods(query: str) -> dict:
+async def search_foods(
+    query: str,
+    item_types: list[Literal['standard', 'custom', 'cafeteria']] | None = None,
+    cafeteria: Literal['rune', 'hokubu', 'chuo'] | None = None,
+) -> dict:
     """食品を名前で検索する（標準食品・Myアイテム・食堂メニューを横断）。"""
     user = await resolve_user(SCOPE_MEALS_READ)
     cleaned_query = validators.validate_search_query(query)
 
     from record_app.business_logic.nutrition_calculator import NutritionCalculatorService
+    from record_app.business_logic.food_search import related_suggestions
+
+    if item_types is not None and (not item_types or set(item_types) - {'standard', 'custom', 'cafeteria'}):
+        raise ValidationError('item_types は standard / custom / cafeteria を1つ以上指定してください。')
+    if cafeteria not in (None, 'rune', 'hokubu', 'chuo'):
+        raise ValidationError('cafeteria は rune / hokubu / chuo のいずれかです。')
 
     calculator = NutritionCalculatorService()
     foods = await sync_to_async(calculator.search_foods_across_sources)(
-        user, cleaned_query, MAX_SEARCH_RESULTS
+        user, cleaned_query, MAX_SEARCH_RESULTS, item_types=item_types, cafeteria=cafeteria
     )
 
-    return {'query': cleaned_query, 'count': len(foods), 'foods': foods}
+    return {'query': cleaned_query, 'count': len(foods), 'foods': foods,
+            'suggestions': related_suggestions(cleaned_query) if not foods else []}
 
 
 # =============================================================================
