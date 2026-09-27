@@ -66,11 +66,17 @@ OAuth の `/o/`・`/.well-known/` と認可用 `/accounts/` は `/api/` の外�
 
 ## Web と MCP を混同しない
 
+Myアイテムの書き込み用 `nutrition` は `nutrition_basis` 当たりの値を受け取る。
+保存形式の `*_per_100g` / `nutrition_per_serving` との同時指定はしない。
+重量不明の `per_serving` は、応答の `*_per_100g` がnull、`nutrition_per_serving` が1食分となる。
+食事・Myメニューの明細も `amount_grams=null` と正の `servings` を受け渡す。
+`foods/calculate/` はg換算専用のため、重量不明の食品では400を返す。
+
 | 処理 | Web API | MCP |
 |---|---|---|
 | 食事作成 | 合計値と明細の栄養値を送信して保存 | 食品 ID と分量をサーバーで解決して保存 |
-| Myアイテム作成 | 100g基準のフィールドを送信 | 署名付き下書き・本人の確認を経て作成 |
-| 食事削除 | 認証付き DELETE | 書き込みスコープに加えて `confirmed=true` |
+| Myアイテム作成 | 基準付き `nutrition`、または保存形式の栄養値を送信 | `food` から直接作成、署名付き下書きも任意で利用可能 |
+| 食事削除 | 認証付き DELETE | 書き込みスコープを要求。利用者の明確な削除依頼で実行 |
 | 再送防止 | 共通の idempotency ヘッダーは実装していない | 食事作成の `idempotency_key` 引数で対応 |
 
 新しいクライアントを実装するときは、既存 PWA の [feature 別 API](../frontend/src/features) と

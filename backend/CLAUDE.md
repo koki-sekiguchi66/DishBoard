@@ -53,8 +53,9 @@ mcp_server/
 - ツールの description は **Claude が読む唯一の仕様書**。単位・副作用の有無・日付形式を必ず書く
 - 既存の `/api/` 向けメソッドを MCP のために書き換えない。必要なら別メソッドを足す
 
-MyアイテムのMCP作成は署名付き下書きと本人確認を経由する。保存栄養値は常に100g基準を維持し、
-`servings` は実重量に換算して明細へ保存する。食事作成の再送キーは `MealCreationRequest` に保持し、
+Myアイテムは入力値から直接作成でき、署名付き下書きは任意。重量不明の1食分食品は
+`nutrition_per_serving` に保存し、100g栄養値はnullにする。明細も重量nullと食数を保持する（ADR #42）。
+重量がある場合は100g基準で保存する。食事作成の再送キーは `MealCreationRequest` に保持し、
 記録削除後も消さない。処理は `MealService.create_idempotently()` のトランザクション境界を使う。
 
 ## 認証

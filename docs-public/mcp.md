@@ -15,9 +15,9 @@ MCPの入出力定義は `backend/mcp_server/server.py` のツール説明と入
 | `suggest_cafeteria_menus` | `meals:read` | 栄養目標の残りに近い学食の提案 |
 | `draft_meal` | `meals:read` | 食品と分量を解決して確認用の下書きを返す |
 | `draft_custom_food` | `meals:read` | 出典付きMyアイテムの署名付き下書き。保存しない |
-| `create_custom_food` | `meals:write` | 下書きを本人が確認した後に食品を保存 |
+| `create_custom_food` | `meals:write` | 指定した栄養値または署名付き下書きから食品を保存 |
 | `create_meal_record` / `update_meal_record` | `meals:write` | 食事の作成・編集。食事作成は再送キーに対応 |
-| `delete_meal_record` | `meals:write` | 本人の確認後に食事と明細を削除 |
+| `delete_meal_record` | `meals:write` | 利用者が指定した本人の食事と明細を削除 |
 
 体重の書き込みツールや汎用SQL実行ツールは公開していない。
 登録一覧と副作用注釈は [server.py](../backend/mcp_server/server.py)、
@@ -84,8 +84,9 @@ python manage.py load_standard_foods data/standard_foods.csv
 作成・編集・削除は `readOnlyHint=false`。OAuthの `meals:read` / `meals:write` 検査は従来どおり行う。
 これらはクライアントへのヒントであり、クライアント独自の承認要求をサーバーから解除するものではない。
 
-`delete_meal_record(meal_record_id, confirmed=false)` は対象の記録を利用者に提示して確認後、
-`confirmed=true` で呼ぶ。本人の記録と明細を完全削除する。取り消しはできない。
+`delete_meal_record(meal_record_id)` は利用者から対象が明確な削除依頼を受けた場合に呼ぶ。
+対象が曖昧な場合だけ確認する。任意の `confirmed=false` はキャンセル扱いで、書き込まない。
+本人の記録と明細を完全削除する。取り消しはできない。
 他人のIDと存在しないIDはどちらも「見つからない」として扱い、存在を漏らさない。
 
 `update_meal_record` は引き続き明細の全置換であり、更新時の食品マスタから全明細の栄養を再計算する。
@@ -93,35 +94,51 @@ python manage.py load_standard_foods data/standard_foods.csv
 
 ## Myアイテムの作成と1食分の指定
 
-`draft_custom_food(food)` は名前・栄養基準・1食分重量・栄養値・出典を検証し、DBへ保存せずに
-下書きと署名付き `draft_token` を返す。名前、栄養値、重量、出典を利用者に提示して確認後、
-`create_custom_food(draft_token, confirmed=true)` で作成する。下書きは本人だけが利用でき、
-30分で失効する。内容を変更するときは下書きから作り直す。
+明確な登録依頼と商品の栄養表示があれば `create_custom_food(food=...)` で直接作成できる。
+`draft_custom_food(food)` は事前相談用の任意ツールで、DBへ保存せず署名付き `draft_token` を返す。
+`create_custom_food(draft_token=...)` も利用できる。`food` と `draft_token` は一方だけを指定する。
+下書きは本人だけが利用でき、30分で失効する。`confirmed` は任意で、false はキャンセル扱い。
 
 | 入力 | 意味 |
 |---|---|
 | `name` | 100文字以内の名前。同一利用者の同名食品は上書きしない |
 | `nutrition_basis` | `per_100g` または `per_serving` |
-| `serving_size_g` | 1食分の実重量。`per_serving` では必須。0より大きく10,000g以下 |
+| `serving_size_g` | 任意の1食分実重量。不明なら省略またはnull。指定時は0より大きく10,000g以下 |
 | `nutrition` | 指定した基準当たりの12栄養素。kcal・PFCは必須、微量栄養素は省略時0 |
 | `source` | `url`（URL付きの表示）または `manual`（利用者がラベルから手入力）を必ず指定 |
 | `source_url` | `source=url` のとき必須。HTTP(S)のみ。`manual` のときは空欄 |
 
 URLの内容はサーバーが取得・検証するものではない。公式表示やラベルで確認できた値を渡す。
-AIの推定値を混ぜない。作成時は必ず `is_verified=false` とし、WebのMyアイテム一覧に
-「未検証」を表示する。利用者は編集画面で出典と栄養値を確認して「確認済み」に変更できる。
-栄養値・出典・重量などを変更した場合は、再確認が明示されない限り未検証へ戻る。
+AIの推定値を混ぜない。検証済み・未検証のフラグは設けず、出典だけを保持する。
 微量栄養素の省略は測定された0と区別できないため、必要な項目は出典で確認する。
 
-既存の `*_per_100g` カラムは常に100g当たりを保持する。1食28gで117kcalを登録した場合、
+`*_per_100g` カラムは100g当たりを保持する。1食28gで117kcalを登録した場合、
 内部では `117 × 100 / 28` kcal/100gへ換算する。MCP検索は登録時の基準で栄養値を返し、
-Web APIの `*_per_100g` と編集画面の栄養値は100g基準を維持する。
-Web一覧で1食分の食品を選ぶと、その重量で食事明細へ追加する。
+Web APIの `*_per_100g` は100g基準、編集画面は選択した基準で入力する。
+重量不明の `per_serving` 食品は `nutrition_per_serving` に1食分の値を保持し、
+`*_per_100g` をnullにする。Web一覧から追加すると1食分として選択できる。
 
 `draft_meal` / `create_meal_record` / `update_meal_record` の明細には、`amount_grams` または
-`servings` の一方を指定する。`servings` は1食分重量のあるMyアイテム専用で、0より大きく100以下。
+`servings` の一方を指定する。`servings` は1食分の栄養値または重量を持つMyアイテム専用で、0より大きく100以下。
 たとえば28gの食品を `servings=2` とすると56g・234kcalを記録する。換算後も重量上限10,000gを適用し、
-保存する `amount_grams` は実重量となる。学食は従来の1食固定、標準食品は重量指定を使う。
+保存する `amount_grams` は実重量となる。重量不明の場合は `amount_grams` 入力を拒否し、
+記録には `amount_grams=null` と食数を保存する。学食は従来の1食固定、標準食品は重量指定を使う。
+
+例: `create_custom_food(food={"name":"サンドイッチ","nutrition_basis":"per_serving","source":"manual",
+"nutrition":{"calories":250,"protein":10,"fat":12,"carbohydrates":26}})` で登録し、
+返されたIDを `servings=1.5` で記録すると375kcalとなる。グラム値は推定しない。
+
+## Claudeアプリでの確認負荷
+
+明確な依頼に対する食事・食品の作成は直接実行し、下書きと会話上の再確認を必須にしない。
+検索・作成済みの食品IDは再利用し、不要な検索も省く。OAuthの権限検査・所有者の分離・書き込み頻度制限は維持する。
+
+Claude側で選択できる場合、**Customize → Connectors → DishBoard → Tool permissions** から
+日常的に使うツールを **Always allow** に設定すると、ツール呼び出しごとの承認を減らせる。
+組織の制限が優先される場合や、クライアントが別途確認を求める場合があり、サーバーから強制できない。
+読み取り専用の注釈で書き込みを偽装することはしない。
+参照: [Claude公式のコネクター設定](https://support.claude.com/en/articles/11176164-use-connectors-to-extend-claude-s-capabilities)、
+[MCP公式のツール注釈](https://blog.modelcontextprotocol.io/posts/2026-03-16-tool-annotations/)。
 
 ## 食事作成の再送
 
@@ -137,10 +154,7 @@ Web一覧で1食分の食品を選ぶと、その重量で食事明細へ追加�
 
 ## DB変更の反映
 
-反映対象環境への実行が承認された際に、バックアップ後 `python manage.py migrate` を実行する。
-`0013_custom_food_metadata` が食品の基準・重量・出典・確認状態を、
-`0014_meal_creation_request` が再送キーを追加する。依存ライブラリの追加は不要。
-
-既存Myアイテムは栄養値を変更せず、100g基準・手入力・未検証・1食分重量なしとして引き継ぐ。
-既存の食事スナップショットも変更しない。旧版へ戻すときは追加カラムとキーのテーブルを残し、
-アプリだけを戻す。逆マイグレーションは出典や再送防止の情報を失うため行わない。
+`0015_optional_serving_weight` が重量不明の食品・明細と食数に対応し、検証フラグを削除する。
+既存食品の栄養値・出典・重量と、既存の食事スナップショットは変更しない。依存ライブラリの追加は不要。
+旧アプリは削除されたカラムを参照するため、通常の無停止更新やアプリだけの切り戻しはできない。
+停止を含む手順を [運用文書](operations.md#0015の反映重量不明の1食分対応) に記載する。

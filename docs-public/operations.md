@@ -33,6 +33,8 @@ DBバックアップは更新前に取得し、VM外にも退避する。メデ�
 
 ## 通常更新のコマンド
 
+**0015を初めて適用する更新では、下記の通常手順ではなく「0015の反映」を使う。**
+
 本番 VM の Bash で、作業ディレクトリを合わせて実行する。
 `set -eu` をサブシェル内に置き、途中のコマンドが失敗した場合は後続を実行しない。
 
@@ -71,15 +73,51 @@ docker compose -f docker-compose.production.yml logs --tail=100 backend mcp ngin
 この順序は追加スキーマと旧コードが互換である変更に適用でき、削除・改名などでは別の移行計画が必要になる。
 backend / mcp を再作成した後は、nginx が接続先を解決し直すよう再起動する。
 
+## 0015の反映（重量不明の1食分対応）
+
+`0015_optional_serving_weight` は検証フラグのカラムを削除するため、旧アプリを稼働させたまま
+マイグレーションを実行できない。短い停止時間を設け、backendとmcpを止めてから適用する。
+食品CSVの再投入はこの変更では不要。以下は本番VMのBashで実行する。
+
+```bash
+(
+set -eu
+cd ~/dishboard
+git pull --ff-only origin main
+docker compose -f docker-compose.production.yml build
+
+docker compose -f docker-compose.production.yml stop backend mcp
+umask 077
+backup_file="$HOME/dishboard_before_0015_$(date +%Y%m%d_%H%M%S).dump"
+docker compose -f docker-compose.production.yml exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > "$backup_file"
+test -s "$backup_file"
+docker compose -f docker-compose.production.yml exec -T db pg_restore --list < "$backup_file" > /dev/null
+echo "バックアップ: $backup_file"
+
+docker compose -f docker-compose.production.yml run --rm --no-deps backend python manage.py migrate --noinput
+docker compose -f docker-compose.production.yml up -d
+docker compose -f docker-compose.production.yml restart nginx
+docker compose -f docker-compose.production.yml ps
+docker compose -f docker-compose.production.yml exec -T backend python manage.py showmigrations record_app
+docker compose -f docker-compose.production.yml logs --tail=100 backend mcp nginx
+)
+```
+
+バックアップやマイグレーションが失敗した場合はサービスが停止したままになる。原因とDBの適用状態を確認して再開する。
+旧版へアプリだけを戻すと削除済みカラムの参照で失敗する。重量不明のデータを作成した後は、
+逆マイグレーションもNULL禁止制約や1食分栄養値の喪失を伴うため、単純には実行できない。
+修正版の前進適用を優先し、DB復元が必要なら新規記録への影響を判断してから、対応する旧アプリと一緒に戻す。
+
 ## 反映確認
 
 | 確認 | 判断する内容 |
 |---|---|
 | `git rev-parse HEAD` | 意図したコミットになっているか |
-| `showmigrations record_app` | 対象マイグレーションが `[X]` か。Myアイテムと再送対応は0013・0014 |
+| `showmigrations record_app` | 対象マイグレーションが `[X]` か。重量不明対応は0015まで必要 |
 | 食品投入の結果 | 現在の同梱CSVなら2,538件。食品番号で更新され、既存IDが維持される |
 | Web のログイン・食品検索・本人の記録表示 | 認証、API、DB、ブラウザの配布資産が連携するか |
 | MCP の認可・食品検索 | 認可オリジンと `/mcp` の双方が正常か。追加ツールはクライアントの一覧も確認 |
+| 重量不明の食品 | 重量を省略して登録、食数指定で記録できるか。g指定は拒否されるか |
 | PWA の更新通知 | 開いている端末に新しい Service Worker が適用されたか |
 
 `/api/health/` の成功だけでは DB や MCP の機能まで正常とは判断できない。
@@ -93,7 +131,8 @@ GitHub Actions はメニュー更新用であり、main への push を自動デ
 取得件数と各食堂の内容を確認する。全体で0件の場合は既存マスタを保持するが、
 部分的な取得失敗や入替途中の失敗まで自動復旧する構成ではない。
 
-Google連携（0010）・Myアイテム（0013）・再送防止（0014）の切り戻しは、追加スキーマを残してアプリを戻す方針を取る。
+0015より前の、Google連携（0010）・Myアイテム（0013）・再送防止（0014）の切り戻しは、追加スキーマを残してアプリを戻す方針を取る。
+0015適用後にはこの方針を使わず、上記の専用手順に従う。
 Google連携情報・食品の出典・再送キーを失う逆マイグレーションを安易に実行しない。
 DB復元が必要な場合は、バックアップ後に追加された記録が失われる影響も含めて判断する。
 

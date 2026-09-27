@@ -75,6 +75,10 @@ npm run test:run        # 一度だけ実行（watch は npm run test）
 
 ## 既知の落とし穴
 
+**重量不明のMyアイテム・明細のnullを100gや0gで補わない。**
+食品は `nutrition_per_serving`、明細は `servings` を使う。再登録・Myメニュー保存でも食数を引き継ぐ。
+編集フォームは選択した栄養基準で入力し、`*_per_100g` と1食分の値を混同しない（ADR #42）。
+
 **日付は `@/lib/date` の `getLocalDateString()` を使う。**
 `toISOString()` は UTC 変換のため日本時間の深夜に前日へずれる。
 食事記録は日付が主キー的な意味を持つので、1日ずれると別の日に入る。
