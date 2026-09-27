@@ -10,7 +10,7 @@ from record_app.models import MealRecord
 pytestmark = pytest.mark.django_db
 
 
-def test_削除は本人の確認と書き込み権限を必要とする(user, meal_record, mcp_auth_context, run_async):
+def test_削除はキャンセルを尊重し書き込み権限があれば追加確認不要(user, meal_record, mcp_auth_context, run_async):
     with mcp_auth_context(user):
         with pytest.raises(ValidationError):
             run_async(tools.delete_meal_record, meal_record.id, confirmed=False)
@@ -19,7 +19,7 @@ def test_削除は本人の確認と書き込み権限を必要とする(user, m
         with pytest.raises(InsufficientScopeError):
             run_async(tools.delete_meal_record, meal_record.id, confirmed=True)
     with mcp_auth_context(user):
-        result = run_async(tools.delete_meal_record, meal_record.id, confirmed=True)
+        result = run_async(tools.delete_meal_record, meal_record.id)
     assert result == {'id': meal_record.id, 'deleted': True}
     assert not MealRecord.objects.filter(pk=meal_record.id).exists()
 

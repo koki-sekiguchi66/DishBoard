@@ -491,11 +491,11 @@ def _update_meal_record_sync(user, meal_record_id, record_date, meal_timing, mea
     return formatters.format_meal_detail(updated)
 
 
-async def delete_meal_record(meal_record_id: int, confirmed: bool = False) -> dict:
-    """利用者が確認した自分の食事記録を明細とともに削除する。"""
+async def delete_meal_record(meal_record_id: int, confirmed: bool | None = None) -> dict:
+    """利用者が削除を指示した自分の食事記録を明細とともに削除する。"""
     user = await resolve_user(SCOPE_MEALS_WRITE)
-    if confirmed is not True:
-        raise ValidationError('削除する記録を利用者に提示し、確認後に confirmed=true を指定してください。')
+    if confirmed is False:
+        raise ValidationError('削除が取り消されています。')
     check_write_rate_limit(user.id)
     return await sync_to_async(_delete_meal_record_sync)(user, meal_record_id)
 
