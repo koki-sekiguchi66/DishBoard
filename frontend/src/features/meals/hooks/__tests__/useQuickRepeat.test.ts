@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { createMockMeal } from "@/test/helpers";
+import { EMPTY_NUTRITION } from '@/types';
 
 vi.mock("@/features/meals/api/mealApi", () => ({
   mealApi: {
@@ -23,6 +24,18 @@ import { toast } from "sonner";
 describe("useQuickRepeat", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('重量不明の明細は食数を引き継いで再登録する', async () => {
+    const meal = createMockMeal({ items: [{ ...EMPTY_NUTRITION, id: 1, item_type: 'custom',
+      item_id: 10, item_name: 'サンド', display_order: 1, calories: 375, amount_grams: null, servings: 1.5 }] });
+    vi.mocked(mealApi.getMealDetail).mockResolvedValue(meal);
+    vi.mocked(mealApi.createMeal).mockResolvedValue(meal);
+    const { result } = renderHook(() => useQuickRepeat());
+    await act(async () => { await result.current.repeatMeal(meal, '2026-09-27'); });
+    expect(mealApi.createMeal).toHaveBeenCalledWith(expect.objectContaining({
+      items: [expect.objectContaining({ amount_grams: null, servings: 1.5, calories: 375 })],
+    }));
   });
 
   it("詳細を取得し明細ごと指定日へ複製する", async () => {

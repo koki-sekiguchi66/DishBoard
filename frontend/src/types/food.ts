@@ -50,19 +50,19 @@ export interface CustomFood {
   serving_size_g?: number | null;
   source?: "manual" | "url";
   source_url?: string;
-  is_verified?: boolean;
-  calories_per_100g: number;
-  protein_per_100g: number;
-  fat_per_100g: number;
-  carbs_per_100g: number;
-  fiber_per_100g: number;
-  sodium_per_100g: number;
-  calcium_per_100g: number;
-  iron_per_100g: number;
-  vitamin_a_per_100g: number;
-  vitamin_b1_per_100g: number;
-  vitamin_b2_per_100g: number;
-  vitamin_c_per_100g: number;
+  nutrition_per_serving?: FullNutrition | null;
+  calories_per_100g: number | null;
+  protein_per_100g: number | null;
+  fat_per_100g: number | null;
+  carbs_per_100g: number | null;
+  fiber_per_100g: number | null;
+  sodium_per_100g: number | null;
+  calcium_per_100g: number | null;
+  iron_per_100g: number | null;
+  vitamin_a_per_100g: number | null;
+  vitamin_b1_per_100g: number | null;
+  vitamin_b2_per_100g: number | null;
+  vitamin_c_per_100g: number | null;
 }
 
 /** CustomFood のうち 100g あたり栄養素を表すフィールド名 */
@@ -108,7 +108,8 @@ export interface CustomMenuItemDetail extends FullNutrition {
   item_type: string;
   item_id: number;
   item_name: string;
-  amount_grams: number;
+  amount_grams: number | null;
+  servings?: number | null;
   display_order: number;
 }
 
@@ -165,11 +166,12 @@ export interface CafeteriaMenu {
  */
 export interface FoodSelectionItem
   extends Partial<FullNutrition>,
-    Partial<Record<Per100gField, number>> {
+    Partial<Record<Per100gField, number | null>> {
   item_type?: string;
   item_id?: number | string;
   item_name: string;
-  amount_grams?: number;
+  amount_grams?: number | null;
+  servings?: number | null;
   amount?: number;
   /** 食堂メニューの識別 */
   menu_id?: number;

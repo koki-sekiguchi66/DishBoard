@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { createMockMeal } from "@/test/helpers";
+import { EMPTY_NUTRITION } from '@/types';
 
 vi.mock("@/features/meals/api/mealApi", () => ({
   mealApi: {
@@ -29,6 +30,19 @@ import { toast } from "sonner";
 describe("useSaveMealAsMenu", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('重量不明の明細はMyメニューにも食数を引き継ぐ', async () => {
+    const meal = createMockMeal({ items: [{ ...EMPTY_NUTRITION, id: 1, item_type: 'custom',
+      item_id: 10, item_name: 'サンド', display_order: 1, calories: 375, amount_grams: null, servings: 1.5 }] });
+    vi.mocked(mealApi.getMealDetail).mockResolvedValue(meal);
+    vi.mocked(customMenuApi.createMenu).mockResolvedValue({ id: 9, name: '昼', items_count: 1,
+      total_calories: 375, total_protein: 0, total_fat: 0, total_carbohydrates: 0 });
+    const { result } = renderHook(() => useSaveMealAsMenu());
+    await act(async () => { await result.current.saveMealAsMenu(meal.id, '昼'); });
+    expect(customMenuApi.createMenu).toHaveBeenCalledWith(expect.objectContaining({
+      items: [expect.objectContaining({ amount_grams: null, servings: 1.5, calories: 375 })],
+    }));
   });
 
   it("明細を取得し display_order を振り直して Myメニューを作成する", async () => {

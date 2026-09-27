@@ -19,14 +19,12 @@ def food_input(**overrides):
     return tools.CustomFoodInput(**(data | overrides))
 
 
-def test_下書きは保存せず確認後に未検証で作成する(user, mcp_auth_context, run_async):
+def test_下書きは保存せず追加確認なしで作成できる(user, mcp_auth_context, run_async):
     with mcp_auth_context(user):
         draft = run_async(tools.draft_custom_food, food_input())
         assert draft['saved'] is False
         assert not CustomFood.objects.exists()
-        with pytest.raises(ValidationError):
-            run_async(tools.create_custom_food, draft['draft_token'])
-        result = run_async(tools.create_custom_food, draft['draft_token'], confirmed=True)
+        result = run_async(tools.create_custom_food, draft['draft_token'])
         search = run_async(tools.search_foods, 'テストプロテイン')
         meal = run_async(tools.draft_meal, '2杯', [
             tools.MealItemInput(item_type='custom', item_id=result['item_id'], servings=2),
@@ -36,7 +34,7 @@ def test_下書きは保存せず確認後に未検証で作成する(user, mcp_
         ])
     food = CustomFood.objects.get()
     assert food.calories_per_100g == pytest.approx(117 * 100 / 28)
-    assert food.is_verified is False
+    assert 'is_verified' not in result
     assert food.source_url == 'https://example.com/nutrition'
     assert search['foods'][0]['nutrition_basis'] == 'per_serving'
     assert search['foods'][0]['nutrition']['calories'] == pytest.approx(117)
@@ -75,7 +73,7 @@ def test_期限切れの下書きを拒否する(user, mcp_auth_context, run_asy
 @pytest.mark.parametrize('overrides', [
     {'source': 'url', 'source_url': ''},
     {'source': 'url', 'source_url': 'javascript:alert(1)'},
-    {'serving_size_g': None},
+    {'serving_size_g': 0},
 ])
 def test_出典と1食分重量を検証する(user, mcp_auth_context, run_async, overrides):
     with mcp_auth_context(user):
@@ -121,24 +119,23 @@ def test_食数指定を実重量で食事記録に保存する(user, mcp_auth_c
     assert detail['total']['calories'] == 234
 
 
-def test_Webで変更した栄養値は再確認が必要になる(custom_food, authenticated_client):
-    custom_food.is_verified = True
-    custom_food.save()
+def test_Webで変更した栄養値に検証フラグを返さない(custom_food, authenticated_client):
     response = authenticated_client.patch(f'/api/foods/custom/{custom_food.pk}/', {
         'calories_per_100g': 250,
     })
     assert response.status_code == 200
-    assert response.data['is_verified'] is False
+    assert 'is_verified' not in response.data
+    assert response.data['calories_per_100g'] == 250
 
 
 def test_Webで出典と1食分重量を確認できる(custom_food, authenticated_client, other_authenticated_client):
     path = f'/api/foods/custom/{custom_food.pk}/'
     response = authenticated_client.patch(path, {
         'nutrition_basis': 'per_serving', 'serving_size_g': 28,
-        'source': 'url', 'source_url': 'https://example.com/nutrition', 'is_verified': True,
+        'source': 'url', 'source_url': 'https://example.com/nutrition',
     })
     assert response.status_code == 200
-    assert response.data['is_verified'] is True
+    assert 'is_verified' not in response.data
     assert response.data['serving_size_g'] == 28
     assert other_authenticated_client.get(path).status_code == 404
-    assert other_authenticated_client.patch(path, {'is_verified': False}).status_code == 404
+    assert other_authenticated_client.patch(path, {'serving_size_g': 30}).status_code == 404

@@ -4,27 +4,15 @@ from django.contrib.auth.models import User
 from django.db import transaction
 
 class CustomFoodSerializer(serializers.ModelSerializer):
-    def validate(self, attrs):
-        from .business_logic.custom_food import validate_metadata, NUTRIENT_FIELDS
-        import math
+    nutrition = serializers.JSONField(write_only=True, required=False)
 
-        data = {key: getattr(self.instance, key) for key in (
-            'nutrition_basis', 'serving_size_g', 'source', 'source_url',
-        )} if self.instance else {}
-        data.update(attrs)
+    def validate(self, attrs):
+        from .business_logic.custom_food import normalize_food_update
+
         try:
-            validate_metadata(data)
+            return normalize_food_update(attrs, self.instance)
         except ValueError as error:
             raise serializers.ValidationError(str(error)) from error
-        for field in NUTRIENT_FIELDS.values():
-            if field in attrs and (not math.isfinite(attrs[field]) or attrs[field] < 0):
-                raise serializers.ValidationError({field: '有限の非負数で指定してください。'})
-        checked_fields = (*NUTRIENT_FIELDS.values(), 'nutrition_basis', 'serving_size_g', 'source', 'source_url', 'name')
-        if self.instance and 'is_verified' not in attrs and any(
-            field in attrs and attrs[field] != getattr(self.instance, field) for field in checked_fields
-        ):
-            attrs['is_verified'] = False
-        return attrs
 
     class Meta:
         model = CustomFood
@@ -90,11 +78,25 @@ class CafeteriaMenuSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class MealRecordItemSerializer(serializers.ModelSerializer):
+class ServingItemValidationMixin:
+    """重量不明の明細には食数を残し、架空の重量を保存させない。"""
+
+    def validate(self, attrs):
+        import math
+
+        amount, servings = attrs.get('amount_grams'), attrs.get('servings')
+        if amount is None and (attrs.get('item_type') != 'custom' or servings is None):
+            raise serializers.ValidationError('重量不明のMyアイテムにはservingsを指定してください。')
+        if servings is not None and (not math.isfinite(servings) or servings <= 0):
+            raise serializers.ValidationError('servingsは有限の正の数で指定してください。')
+        return attrs
+
+
+class MealRecordItemSerializer(ServingItemValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = MealRecordItem
         fields = [
-            'id', 'item_type', 'item_id', 'item_name', 'amount_grams',
+            'id', 'item_type', 'item_id', 'item_name', 'amount_grams', 'servings',
             'display_order', 'calories', 'protein', 'fat', 'carbohydrates',
             'dietary_fiber', 'sodium', 'calcium', 'iron',
             'vitamin_a', 'vitamin_b1', 'vitamin_b2', 'vitamin_c',
@@ -161,7 +163,7 @@ class MealRecordListSerializer(serializers.ModelSerializer):
         ]
 
 
-class CustomMenuItemSerializer(serializers.ModelSerializer):
+class CustomMenuItemSerializer(ServingItemValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = CustomMenuItem
         fields = '__all__'

@@ -4,16 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Switch } from '@/components/ui/switch';
 import { MeasureField } from '@/components/inputs';
 import { Loader2, Check, AlertTriangle, FileText, Pencil } from 'lucide-react';
 import { customFoodApi } from '../api/customFoodApi';
 import CustomFoodNutritionFields, {
-  toPer100gFormValues,
+  EMPTY_PER_100G_VALUES,
   toPer100gNumbers,
   type Per100gFormValues,
 } from './CustomFoodNutritionFields';
 import type { CustomFood, Per100gField } from '@/types';
+import { EMPTY_NUTRITION, FULL_NUTRITION_KEYS, PER_100G_FIELD } from '@/types';
 
 const EditCustomFoodModal = ({ show, food, onClose, onFoodUpdated }: {
   show: boolean;
@@ -22,23 +22,23 @@ const EditCustomFoodModal = ({ show, food, onClose, onFoodUpdated }: {
   onFoodUpdated: (food: CustomFood) => void;
 }) => {
   const [name, setName] = useState(food.name);
-  const [nutrition, setNutrition] = useState<Per100gFormValues>(() => toPer100gFormValues(food));
+  const [nutrition, setNutrition] = useState<Per100gFormValues>(() => Object.fromEntries(FULL_NUTRITION_KEYS.map(key => [
+    PER_100G_FIELD[key], String(food.nutrition_per_serving?.[key] ??
+      ((food[PER_100G_FIELD[key]] ?? 0) * (food.nutrition_basis === 'per_serving' ? (food.serving_size_g ?? 100) / 100 : 1))),
+  ])) as Per100gFormValues);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showAdvancedNutrition, setShowAdvancedNutrition] = useState(false);
   const [basis, setBasis] = useState(food.nutrition_basis ?? 'per_100g');
   const [servingSize, setServingSize] = useState(String(food.serving_size_g ?? ''));
   const [sourceUrl, setSourceUrl] = useState(food.source_url ?? '');
-  const [verified, setVerified] = useState(food.is_verified ?? false);
 
   const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     setName(e.target.value);
-    setVerified(false);
   };
 
   const handleNutritionChange = (field: Per100gField, value: string) => {
     setNutrition(prev => ({ ...prev, [field]: value }));
-    setVerified(false);
   };
 
   const handleSubmit = async (e: React.MouseEvent | React.FormEvent) => {
@@ -51,9 +51,16 @@ const EditCustomFoodModal = ({ show, food, onClose, onFoodUpdated }: {
       setIsLoading(false);
       return;
     }
+    if ((['calories', 'protein', 'fat', 'carbohydrates'] as const).some(key => {
+      const value = nutrition[PER_100G_FIELD[key]];
+      return !value.trim() || !Number.isFinite(Number(value)) || Number(value) < 0;
+    })) {
+      setError('カロリーとPFCを0以上の数で入力してください。');
+      setIsLoading(false);
+      return;
+    }
     const size = servingSize.trim() ? Number(servingSize) : null;
-    if ((basis === 'per_serving' && size === null) ||
-        (size !== null && (!Number.isFinite(size) || size <= 0))) {
+    if (size !== null && (!Number.isFinite(size) || size <= 0)) {
       setError('1食分の重量を0より大きい数で入力してください。');
       setIsLoading(false);
       return;
@@ -62,12 +69,14 @@ const EditCustomFoodModal = ({ show, food, onClose, onFoodUpdated }: {
     try {
       const response = await customFoodApi.updateCustomFood(food.id, {
         name,
-        ...toPer100gNumbers(nutrition),
+        nutrition: FULL_NUTRITION_KEYS.reduce((values, key) => {
+          values[key] = toPer100gNumbers(nutrition)[PER_100G_FIELD[key]];
+          return values;
+        }, { ...EMPTY_NUTRITION }),
         nutrition_basis: basis,
         serving_size_g: size,
         source: sourceUrl.trim() ? 'url' : 'manual',
         source_url: sourceUrl.trim(),
-        is_verified: verified,
       });
       onFoodUpdated(response);
       onClose();
@@ -112,28 +121,34 @@ const EditCustomFoodModal = ({ show, food, onClose, onFoodUpdated }: {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="custom-food-basis">表示・追加する量</Label>
+            <Label htmlFor="custom-food-basis">栄養成分の基準</Label>
             <select id="custom-food-basis" className="w-full rounded border border-border bg-background p-2"
               value={basis} onChange={(event) => {
-                setBasis(event.target.value === 'per_serving' ? 'per_serving' : 'per_100g');
-                setVerified(false);
+                const next = event.target.value === 'per_serving' ? 'per_serving' : 'per_100g';
+                const size = Number(servingSize);
+                if (size > 0 && Number.isFinite(size)) {
+                  const factor = next === 'per_serving' ? size / 100 : 100 / size;
+                  setNutrition(Object.fromEntries(Object.entries(nutrition).map(([key, value]) =>
+                    [key, value === '' ? '' : String(Number(value) * factor)])) as Per100gFormValues);
+                } else {
+                  setNutrition(EMPTY_PER_100G_VALUES);
+                  setError('重量が未設定のため換算できません。選択した基準で栄養成分を入力してください。');
+                }
+                setBasis(next);
               }}>
               <option value="per_100g">100g</option>
               <option value="per_serving">1食分</option>
             </select>
-            <MeasureField label="1食分の重量" unit="g" value={servingSize}
-              onChange={(value) => { setServingSize(value); setVerified(false); }} step={1} />
-            <p className="text-sm text-muted-foreground">栄養成分の入力値は100gあたりです。1食分は重量から換算します。</p>
+            <MeasureField label="1食分の重量（任意）" unit="g" value={servingSize}
+              onChange={(value) => { setServingSize(value); }} step={1} />
+            <p className="text-sm text-muted-foreground">1食分の重量が不明な場合は空欄にできます。その場合は食数で記録します。</p>
             <Label htmlFor="custom-food-source">出典URL（ラベルから手入力した場合は空欄）</Label>
             <Input id="custom-food-source" type="url" value={sourceUrl}
-              onChange={(event) => { setSourceUrl(event.target.value); setVerified(false); }} />
-            <div className="flex items-center gap-2">
-              <Switch id="custom-food-verified" checked={verified} onCheckedChange={setVerified} />
-              <Label htmlFor="custom-food-verified">出典と栄養値を確認済み</Label>
-            </div>
+              onChange={(event) => { setSourceUrl(event.target.value); }} />
           </div>
 
           <CustomFoodNutritionFields
+            basisLabel={basis === "per_serving" ? "1食あたり" : "100gあたり"}
             values={nutrition}
             onChange={handleNutritionChange}
             showAdvanced={showAdvancedNutrition}

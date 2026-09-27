@@ -12,7 +12,8 @@ export interface MealRecordItem extends FullNutrition {
   item_type: ItemType;
   item_id: number;
   item_name: string;
-  amount_grams: number;
+  amount_grams: number | null;
+  servings?: number | null;
   display_order: number;
 }
 
@@ -60,6 +61,7 @@ export interface MenuBuilderItem extends FullNutrition {
   item_type: ItemType;
   item_id?: number;
   item_name: string;
-  amount_grams: number;
+  amount_grams: number | null;
+  servings?: number | null;
   display_order: number;
 }

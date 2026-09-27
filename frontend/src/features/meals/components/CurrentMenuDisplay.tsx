@@ -22,7 +22,7 @@ export default function CurrentMenuDisplay({
               {item.item_name}
             </p>
             <p className="text-xs text-muted-foreground">
-              {item.amount_grams}g
+              {item.amount_grams === null ? `${item.servings}食` : `${item.amount_grams}g`}
               <span className="mx-1.5">|</span>
               {Math.round(item.calories)}kcal
             </p>

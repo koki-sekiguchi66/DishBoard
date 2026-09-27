@@ -1,5 +1,5 @@
 /**
- * CustomFoodNutritionFields — Myアイテムの「100gあたり栄養素」入力欄
+ * CustomFoodNutritionFields — Myアイテムの基準当たり栄養素の入力欄
  *
  * 新規作成モーダルと編集モーダルで同じ12項目を扱うため、欄の定義と
  * 文字列 ⇔ 数値の変換をここに集約する。フィールド名は
@@ -65,6 +65,7 @@ export const toPer100gNumbers = (
   ) as Record<Per100gField, number>;
 
 interface CustomFoodNutritionFieldsProps {
+  basisLabel?: string;
   values: Per100gFormValues;
   onChange: (field: Per100gField, value: string) => void;
   showAdvanced: boolean;
@@ -72,6 +73,7 @@ interface CustomFoodNutritionFieldsProps {
 }
 
 export default function CustomFoodNutritionFields({
+  basisLabel = "100gあたり",
   values,
   onChange,
   showAdvanced,
@@ -94,7 +96,7 @@ export default function CustomFoodNutritionFields({
       <CardHeader className="flex flex-row items-center justify-between py-3">
         <span className="flex items-center gap-2 text-sm font-semibold">
           <TrendingUp className="h-4 w-4" />
-          栄養成分（100gあたり）
+          栄養成分（{basisLabel}）
         </span>
         <Button variant="outline" size="sm" onClick={onToggleAdvanced}>
           {showAdvanced ? (

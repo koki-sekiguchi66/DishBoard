@@ -8,7 +8,8 @@ interface CreateMenuRequest {
     item_type: string;
     item_id: number;
     item_name: string;
-    amount_grams: number;
+    amount_grams: number | null;
+    servings?: number | null;
     display_order: number;
     calories: number;
     protein: number;

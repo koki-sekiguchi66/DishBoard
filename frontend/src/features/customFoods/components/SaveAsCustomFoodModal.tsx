@@ -2,7 +2,7 @@
  * SaveAsCustomFoodModal — 食事記録の品目1件をMyアイテムとして保存するダイアログ
  *
  * 品目一覧の各行から呼ばれる想定で、渡すのは対象の MealRecordItem のみ。
- * 100gあたりへの換算は useSaveItemAsCustomFood が行う。
+ * 保存基準への換算は useSaveItemAsCustomFood が行う。
  */
 import { useEffect, useState } from "react";
 import { BookmarkPlus, Loader2 } from "lucide-react";
@@ -54,7 +54,7 @@ export default function SaveAsCustomFoodModal({
             Myアイテムとして保存
           </DialogTitle>
           <DialogDescription>
-            この品目を100gあたりの値に換算し、再利用できるMyアイテムとして保存します
+            この品目を{item?.amount_grams === null ? "1食" : "100g"}あたりの値に換算し、再利用できるMyアイテムとして保存します
           </DialogDescription>
         </DialogHeader>
 

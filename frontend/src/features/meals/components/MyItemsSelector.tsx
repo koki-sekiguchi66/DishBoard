@@ -105,15 +105,18 @@ const MyItemsSelector = ({ onItemSelected }: { onItemSelected: (item: FoodSelect
                   item_name: item.name,
                   item_type: 'custom',
                   item_id: item.id,
-                  amount: item.nutrition_basis === 'per_serving' ? item.serving_size_g ?? 100 : 100,
+                  ...(item.nutrition_per_serving ? {
+                    ...item.nutrition_per_serving, amount_grams: null, servings: 1,
+                  } : { amount: item.nutrition_basis === 'per_serving' ? item.serving_size_g ?? 100 : 100 }),
                 })}
               >
                 <div className="flex-1">
                   <div className="font-bold text-primary">{item.name}</div>
-                  {item.is_verified === false && <Badge variant="outline">未検証</Badge>}
                   <small className="text-muted-foreground">
-                    {item.nutrition_basis === 'per_serving' && item.serving_size_g ? (
-                      <>1食（{item.serving_size_g}g）・{Math.round(item.calories_per_100g * item.serving_size_g / 100)}kcal</>
+                    {item.nutrition_per_serving ? (
+                      <>1食あたり・{item.nutrition_per_serving.calories}kcal（重量未設定）</>
+                    ) : item.nutrition_basis === 'per_serving' && item.serving_size_g ? (
+                      <>1食（{item.serving_size_g}g）・{Math.round((item.calories_per_100g ?? 0) * item.serving_size_g / 100)}kcal</>
                     ) : (
                       <>100gあたり・{item.calories_per_100g}kcal <span className="mx-1">|</span>P:{item.protein_per_100g}g</>
                     )}

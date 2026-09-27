@@ -16,6 +16,7 @@ const toMenuItemPayload = (item: MealRecordItem, index: number) => ({
   item_id: item.item_id,
   item_name: item.item_name,
   amount_grams: item.amount_grams,
+  ...(item.servings != null ? { servings: item.servings } : {}),
   display_order: index + 1,
   calories: item.calories,
   protein: item.protein,

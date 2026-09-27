@@ -104,6 +104,8 @@ class NutritionCalculatorService:
                 food = StandardFood.objects.get(pk=food_pk)
             elif food_type == 'custom':
                 food = CustomFood.objects.get(pk=food_pk, user=user)
+                if food.nutrition_per_serving is not None:
+                    raise ValueError('重量不明の食品はg指定で計算できません。食数を指定してください。')
             else:
                 raise ValueError(f"不正な食品タイプ: {food_type}")
             
@@ -351,9 +353,17 @@ class NutritionCalculatorService:
             return None
 
         if servings is not None:
-            if item_type != 'custom' or food.serving_size_g is None:
-                raise ValueError('servings は1食分重量を登録したMyアイテムに指定してください。')
-            amount_grams = servings * food.serving_size_g
+            from .custom_food import serving_nutrition
+
+            if item_type != 'custom':
+                raise ValueError('servings はMyアイテムに指定してください。')
+            nutrition = {key: value * servings for key, value in serving_nutrition(food).items()}
+            amount_grams = servings * food.serving_size_g if food.serving_size_g is not None else None
+            return {'name': food.name, 'amount_grams': amount_grams,
+                    'nutrition': {key: round(value, round_digits) for key, value in nutrition.items()}}
+
+        if item_type == 'custom' and food.nutrition_per_serving is not None:
+            raise ValueError('重量不明の食品はamount_gramsで計算できません。servingsを指定してください。')
 
         if item_type == 'cafeteria':
             nutrition = self._get_nutrition_of_serving(food)

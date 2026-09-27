@@ -58,7 +58,7 @@ const TIMING_OPTIONS: { value: MealTiming; label: string; icon: typeof Sunrise }
 export const toMenuItemPayload = (
   item: FoodSelectionItem
 ): Record<string, unknown> => {
-  const amount = parseFloat(String(item.amount_grams || item.amount || 100));
+  const amount = item.amount_grams === null ? null : Number(item.amount_grams ?? item.amount ?? 100);
 
   const resolveNutrient = (key: keyof FullNutrition): number => {
     const direct = item[key];
@@ -67,7 +67,7 @@ export const toMenuItemPayload = (
     }
     const per100Val = item[PER_100G_FIELD[key]];
     if (per100Val !== undefined && per100Val !== null) {
-      return (parseFloat(String(per100Val)) * amount) / 100;
+      return (parseFloat(String(per100Val)) * (amount ?? 0)) / 100;
     }
     return 0;
   };
@@ -87,6 +87,7 @@ export const toMenuItemPayload = (
     item_id: item.item_id || item.menu_id || 0,
     item_name: item.item_name,
     amount_grams: amount,
+    ...(item.servings != null ? { servings: item.servings } : {}),
     ...nutrition,
   };
 };

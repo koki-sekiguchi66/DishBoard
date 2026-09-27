@@ -45,6 +45,17 @@ describe("useSaveItemAsCustomFood", () => {
     vi.clearAllMocks();
   });
 
+  it("重量不明の記録は食数で割った1食分として保存する", async () => {
+    const { result } = renderHook(() => useSaveItemAsCustomFood());
+    await act(async () => {
+      await result.current.saveItemAsCustomFood({ ...baseItem, item_type: 'custom', amount_grams: null, servings: 2 }, 'サンド');
+    });
+    expect(customFoodApi.createCustomFood).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'サンド', nutrition_basis: 'per_serving', serving_size_g: null,
+      nutrition_per_serving: expect.objectContaining({ calories: 168, protein: 2.5 }),
+    }));
+  });
+
   it("amount_grams ぶんの実数値を100gあたりへ換算して保存する", async () => {
     const createdFood = { id: 3, name: "白米" };
     vi.mocked(customFoodApi.createCustomFood).mockResolvedValue(createdFood as never);

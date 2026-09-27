@@ -57,6 +57,7 @@ def format_meal_item(item):
         'item_id': item.item_id,
         'item_name': item.item_name,
         'amount_grams': item.amount_grams,
+        'servings': item.servings,
         **_nutrients_from(item, DETAIL_NUTRIENT_KEYS),
     }
 
@@ -68,6 +69,7 @@ def format_draft_item(item_input, item_name, nutrition):
         'item_id': item_input.item_id,
         'item_name': item_name,
         'amount_grams': item_input.amount_grams,
+        'servings': item_input.servings,
         **nutrition,
     }
 

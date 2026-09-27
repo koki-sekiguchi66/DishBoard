@@ -1,18 +1,27 @@
 /**
  * useSaveItemAsCustomFood — 食事記録の品目1件をMyアイテムとして保存する
  *
- * MealRecordItem は amount_grams ぶんの実数値でしか栄養素を持たないため、
- * CustomFood（100gあたり）へ換算してから保存する。換算は PER_100G_FIELD
- * （記録側の栄養素名 → CustomFood の100gあたりフィールド名）を経由する。
+ * 重量があれば100g当たり、重量不明なら食数で割った1食分として保存する。
  */
 import { useCallback, useState } from "react";
 import { isAxiosError } from "axios";
 import { toast } from "sonner";
 import { customFoodApi } from "../api/customFoodApi";
 import type { CustomFood, MealRecordItem } from "@/types";
-import { FULL_NUTRITION_KEYS, PER_100G_FIELD } from "@/types";
+import { EMPTY_NUTRITION, FULL_NUTRITION_KEYS, PER_100G_FIELD } from "@/types";
 
 const toPer100gPayload = (item: MealRecordItem): Partial<CustomFood> => {
+  if (item.amount_grams === null) {
+    const servings = item.servings;
+    if (!servings || servings <= 0) throw new Error('食数が必要です');
+    return {
+      nutrition_basis: 'per_serving', serving_size_g: null,
+      nutrition_per_serving: FULL_NUTRITION_KEYS.reduce((values, key) => {
+        values[key] = item[key] / servings;
+        return values;
+      }, { ...EMPTY_NUTRITION }),
+    };
+  }
   // amount_grams は MinValueValidator(0) のため 0 もあり得る。0 割りを避ける
   const factor = item.amount_grams > 0 ? 100 / item.amount_grams : 0;
   return Object.fromEntries(

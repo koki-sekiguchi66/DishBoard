@@ -2,7 +2,7 @@
  * カスタム食品（Myアイテム）API
  */
 import { apiClient } from "@/lib/axios";
-import type { CustomFood } from "@/types";
+import type { CustomFood, FullNutrition } from "@/types";
 
 export const customFoodApi = {
   getCustomFoods: async (): Promise<CustomFood[]> => {
@@ -10,14 +10,14 @@ export const customFoodApi = {
     return response.data;
   },
 
-  createCustomFood: async (data: Partial<CustomFood>): Promise<CustomFood> => {
+  createCustomFood: async (data: Partial<CustomFood> & { nutrition?: FullNutrition }): Promise<CustomFood> => {
     const response = await apiClient.post("/foods/custom/", data);
     return response.data;
   },
 
   updateCustomFood: async (
     id: number,
-    data: Partial<CustomFood>
+    data: Partial<CustomFood> & { nutrition?: FullNutrition }
   ): Promise<CustomFood> => {
     const response = await apiClient.put(`/foods/custom/${id}/`, data);
     return response.data;

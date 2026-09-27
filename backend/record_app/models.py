@@ -92,8 +92,9 @@ class MealRecordItem(models.Model):
         max_length=200, 
         verbose_name='アイテム名'
     )
+    servings = models.FloatField(null=True, blank=True, validators=[MinValueValidator(0)])
     amount_grams = models.FloatField(
-        validators=[MinValueValidator(0)],
+        null=True, blank=True, validators=[MinValueValidator(0)],
         verbose_name='分量(g)'
     )
     display_order = models.IntegerField(
@@ -233,19 +234,19 @@ class CustomFood(models.Model):
     serving_size_g = models.FloatField(null=True, blank=True, verbose_name='1食分重量(g)')
     source = models.CharField(max_length=10, default='manual', choices=[('manual', '手入力'), ('url', 'URL')])
     source_url = models.URLField(blank=True, default='')
-    is_verified = models.BooleanField(default=False, verbose_name='利用者が確認済み')
-    calories_per_100g = models.FloatField(verbose_name="エネルギー(kcal)")
-    protein_per_100g = models.FloatField(verbose_name="たんぱく質(g)")
-    fat_per_100g = models.FloatField(verbose_name="脂質(g)")
-    carbs_per_100g = models.FloatField(verbose_name="炭水化物(g)")
-    fiber_per_100g = models.FloatField(default=0, verbose_name="食物繊維(g)")
-    sodium_per_100g = models.FloatField(default=0, verbose_name="ナトリウム(mg)")
-    calcium_per_100g = models.FloatField(default=0, verbose_name="カルシウム(mg)")
-    iron_per_100g = models.FloatField(default=0, verbose_name="鉄(mg)")
-    vitamin_a_per_100g = models.FloatField(default=0, verbose_name="ビタミンA(μg)")
-    vitamin_b1_per_100g = models.FloatField(default=0, verbose_name="ビタミンB1(mg)")
-    vitamin_b2_per_100g = models.FloatField(default=0, verbose_name="ビタミンB2(mg)")
-    vitamin_c_per_100g = models.FloatField(default=0, verbose_name="ビタミンC(mg)")
+    nutrition_per_serving = models.JSONField(null=True, blank=True, default=None)
+    calories_per_100g = models.FloatField(null=True, blank=True, verbose_name="エネルギー(kcal)")
+    protein_per_100g = models.FloatField(null=True, blank=True, verbose_name="たんぱく質(g)")
+    fat_per_100g = models.FloatField(null=True, blank=True, verbose_name="脂質(g)")
+    carbs_per_100g = models.FloatField(null=True, blank=True, verbose_name="炭水化物(g)")
+    fiber_per_100g = models.FloatField(null=True, blank=True, default=0, verbose_name="食物繊維(g)")
+    sodium_per_100g = models.FloatField(null=True, blank=True, default=0, verbose_name="ナトリウム(mg)")
+    calcium_per_100g = models.FloatField(null=True, blank=True, default=0, verbose_name="カルシウム(mg)")
+    iron_per_100g = models.FloatField(null=True, blank=True, default=0, verbose_name="鉄(mg)")
+    vitamin_a_per_100g = models.FloatField(null=True, blank=True, default=0, verbose_name="ビタミンA(μg)")
+    vitamin_b1_per_100g = models.FloatField(null=True, blank=True, default=0, verbose_name="ビタミンB1(mg)")
+    vitamin_b2_per_100g = models.FloatField(null=True, blank=True, default=0, verbose_name="ビタミンB2(mg)")
+    vitamin_c_per_100g = models.FloatField(null=True, blank=True, default=0, verbose_name="ビタミンC(mg)")
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日時")
@@ -261,12 +262,6 @@ class CustomFood(models.Model):
             models.CheckConstraint(
                 condition=models.Q(serving_size_g__isnull=True) | models.Q(serving_size_g__gt=0),
                 name='custom_food_serving_positive',
-            ),
-            models.CheckConstraint(
-                condition=models.Q(nutrition_basis='per_100g') | (
-                    models.Q(nutrition_basis='per_serving') & models.Q(serving_size_g__isnull=False)
-                ),
-                name='custom_food_serving_required',
             ),
         ]
         indexes = [
@@ -413,7 +408,8 @@ class CustomMenuItem(models.Model):
     item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES, verbose_name='アイテム種別')
     item_id = models.IntegerField(verbose_name='アイテムID')
     item_name = models.CharField(max_length=200, verbose_name='アイテム名')
-    amount_grams = models.FloatField(verbose_name='分量(g)')
+    servings = models.FloatField(null=True, blank=True, validators=[MinValueValidator(0)])
+    amount_grams = models.FloatField(null=True, blank=True, verbose_name='分量(g)')
     display_order = models.IntegerField(default=0, verbose_name='表示順序')
     
     calories = models.FloatField(verbose_name='カロリー(kcal)')

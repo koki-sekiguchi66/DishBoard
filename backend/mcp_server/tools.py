@@ -40,22 +40,22 @@ logger = logging.getLogger(__name__)
 
 
 class MealItemInput(BaseModel):
-    """食事明細の入力。search_foods の結果から item_type と item_id を取る。"""
+    """食事明細の入力。検索・食品作成の結果から種別とIDを取る。"""
 
     item_type: Literal['standard', 'custom', 'cafeteria'] = Field(
-        description='食品の種別。search_foods が返した値をそのまま使う'
+        description='食品の種別。検索または食品作成が返した値をそのまま使う'
     )
-    item_id: int = Field(description='search_foods が返した item_id')
+    item_id: int = Field(description='検索または食品作成が返した item_id')
     amount_grams: float | None = Field(
         default=None,
         description=(
             '分量(g)。item_type が standard / custom のときは '
             'この分量で栄養値を按分する。cafeteria は1食ぶんの値が'
-            '決まっているため、この値では変倍されない'
+            '決まっているため、この値では変倍されない。重量不明のMyアイテムには使用できない'
         )
     )
     servings: float | None = Field(
-        default=None, description='1食分重量を登録したMyアイテムの食数。amount_grams とどちらか一方を指定する。',
+        default=None, description='1食分の栄養値または重量を持つMyアイテムの食数。amount_grams とどちらか一方を指定する。重量不明なら食数のみ。',
     )
 
 
@@ -102,17 +102,30 @@ async def draft_custom_food(food: CustomFoodInput) -> dict:
     except ValueError as error:
         raise ValidationError(str(error)) from error
     token = signing.dumps({'user_id': user.id, 'food': values}, salt=CUSTOM_FOOD_DRAFT_SALT, compress=True)
-    return {**data, 'is_verified': False, 'saved': False, 'draft_token': token,
+    return {**data, 'saved': False, 'draft_token': token,
             'expires_in_seconds': CUSTOM_FOOD_DRAFT_MAX_AGE}
 
 
-async def create_custom_food(draft_token: str, confirmed: bool = False) -> dict:
-    """本人が確認した署名付きの下書きからMyアイテムを作成する。"""
+async def create_custom_food(draft_token: str | None = None, confirmed: bool | None = None,
+                             food: CustomFoodInput | None = None) -> dict:
+    """指定した栄養値または署名付き下書きからMyアイテムを作成する。"""
     from django.core import signing
+    from record_app.business_logic.custom_food import prepare_custom_food
 
     user = await resolve_user(SCOPE_MEALS_WRITE)
-    if confirmed is not True:
-        raise ValidationError('下書きの名前・基準・重量・栄養値・出典を利用者に提示し、確認後に confirmed=true を指定してください。')
+    if confirmed is False:
+        raise ValidationError('作成が取り消されています。')
+    if (food is None) == (draft_token is None):
+        raise ValidationError('food または draft_token のどちらか一方を指定してください。')
+    if food is not None:
+        data = food.model_dump()
+        data['name'] = validators.validate_meal_name(food.name)
+        try:
+            values = prepare_custom_food(data)
+        except ValueError as error:
+            raise ValidationError(str(error)) from error
+        check_write_rate_limit(user.id)
+        return await sync_to_async(_create_custom_food_sync)(user, values)
     if not draft_token or len(draft_token) > MAX_DRAFT_TOKEN_LENGTH:
         raise ValidationError('draft_custom_food で有効な下書きを作成してください。')
     try:
@@ -130,7 +143,7 @@ def _create_custom_food_sync(user, values):
     from record_app.serializers import CustomFoodSerializer
     from record_app.business_logic.custom_food import format_custom_food
 
-    serializer = CustomFoodSerializer(data={**values, 'is_verified': False})
+    serializer = CustomFoodSerializer(data=values)
     if not serializer.is_valid():
         raise ValidationError(f'Myアイテムを作成できません: {serializer.errors}')
     try:
@@ -387,7 +400,8 @@ def _resolve_items(user, items):
             )
 
         resolved_input = item.model_copy(update={'amount_grams': entry['amount_grams']})
-        validators.validate_amount_grams(entry['amount_grams'])
+        if entry['amount_grams'] is not None:
+            validators.validate_amount_grams(entry['amount_grams'])
         resolved.append({
             'input': resolved_input,
             'name': entry['name'],
@@ -508,6 +522,7 @@ def _build_meal_payload(user, record_date, meal_timing, meal_name, items):
             'item_id': entry['input'].item_id,
             'item_name': entry['name'],
             'amount_grams': entry['input'].amount_grams,
+            'servings': entry['input'].servings,
             'display_order': display_order,
             **entry['nutrition'],
         })
